@@ -1,0 +1,703 @@
+'use client'
+
+import { createContext, useContext, useState, ReactNode } from 'react'
+
+export type LangCode = 'en' | 'id' | 'ja' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'ru' | 'th'
+
+export interface CurrencyConfig {
+  code: string
+  symbol: string
+  locale: string
+  rateFromUSD: number  // 1 USD = X units
+}
+
+export const currencyMap: Record<LangCode, CurrencyConfig> = {
+  en: { code: 'USD', symbol: '$',  locale: 'en-US',  rateFromUSD: 1      },
+  id: { code: 'IDR', symbol: 'Rp', locale: 'id-ID',  rateFromUSD: 15500  },
+  ja: { code: 'JPY', symbol: '¥',  locale: 'ja-JP',  rateFromUSD: 150    },
+  ko: { code: 'KRW', symbol: '₩',  locale: 'ko-KR',  rateFromUSD: 1350   },
+  zh: { code: 'CNY', symbol: '¥',  locale: 'zh-CN',  rateFromUSD: 7.3    },
+  de: { code: 'EUR', symbol: '€',  locale: 'de-DE',  rateFromUSD: 0.93   },
+  fr: { code: 'EUR', symbol: '€',  locale: 'fr-FR',  rateFromUSD: 0.93   },
+  es: { code: 'EUR', symbol: '€',  locale: 'es-ES',  rateFromUSD: 0.93   },
+  ru: { code: 'RUB', symbol: '₽',  locale: 'ru-RU',  rateFromUSD: 90     },
+  th: { code: 'THB', symbol: '฿',  locale: 'th-TH',  rateFromUSD: 36     },
+}
+
+export type T = typeof translations['en']
+
+export const translations = {
+  en: {
+    nav: {
+      destinations: 'Destinations',
+      packages: 'Tour Packages',
+      blog: 'Blog',
+      bookNow: 'Book Now',
+      eastJava: 'East Java',
+      bali: 'Bali',
+      allPackages: 'All Packages',
+    },
+    hero: {
+      eyebrow: 'Premium Cinematic Travel',
+      subtitle: 'Door-to-door overland journeys from Surabaya to Bali. Bromo sunrise, Ijen blue fire, Tumpak Sewu — one seamless adventure.',
+      explorePackages: 'Explore Packages',
+      viewDestinations: 'View Destinations',
+    },
+    sections: {
+      destinations: 'Destinations',
+      packages: 'Tour Packages',
+      testimonials: 'Verified Reviews',
+      fleet: 'Our Fleet',
+      blog: 'Travel Journal',
+      departures: 'Upcoming Departures',
+    },
+    booking: {
+      title: 'Book Your Adventure',
+      subtitle: 'No account required · Instant WhatsApp confirmation',
+      step1: 'Select Trip',
+      step2: 'Pickup',
+      step3: 'Your Details',
+      step4: 'Payment',
+      selectPackage: 'Tour Package',
+      departureDate: 'Departure Date',
+      travelers: 'Number of Travelers',
+      totalEstimate: 'Total estimate',
+      pickupPoint: 'Select Your Pickup Point',
+      fullName: 'Full Name',
+      email: 'Email Address',
+      whatsapp: 'WhatsApp Number',
+      specialRequest: 'Special Requests',
+      specialRequestPlaceholder: 'Dietary requirements, accessibility needs, special occasions...',
+      namePlaceholder: 'Your full name',
+      emailPlaceholder: 'your@email.com',
+      whatsappPlaceholder: '+1 234 567 890',
+      whatsappNote: 'Your booking confirmation and itinerary PDF will be sent here.',
+      paymentMethod: 'Payment Method',
+      orderSummary: 'Order Summary',
+      perPerson: '/ person',
+      travelers_label: 'traveler(s)',
+      departure: 'Departure',
+      total: 'Total',
+      confirmPay: 'Confirm & Pay',
+      continue: 'Continue',
+      back: 'Back',
+      freeCancel: 'No account needed · Free cancellation 72h before',
+      seatsLeft: 'seats remaining',
+      confirmed: 'Booking Confirmed!',
+      confirmedSub: 'Your adventure is secured. Check your WhatsApp for confirmation.',
+      bookingCode: 'Booking Code',
+      whatsappConfirm: 'A WhatsApp confirmation with your PDF itinerary will be sent to',
+      backHome: 'Home',
+      morePackages: 'More Packages',
+    },
+    packageDetail: {
+      duration: 'Duration',
+      groupSize: 'Group Size',
+      rating: 'Rating',
+      distance: 'Distance',
+      highlights: 'Trip Highlights',
+      included: "What's Included",
+      excluded: 'Not Included',
+      itinerary: 'Day-by-Day Itinerary',
+      bookThis: 'Book This Package',
+      seePackages: 'See Packages',
+      perPerson: '/ person',
+      seatsRemaining: 'seats remaining',
+    },
+    general: {
+      perPerson: '/ person',
+      maxGroup: 'Max',
+      seatsLeft: 'seats left',
+      readMore: 'Read Article',
+      viewDetails: 'View Details',
+      exploreAll: 'View All',
+      bookNow: 'Book Now',
+      learnMore: 'Learn More',
+      backToSite: 'Back to Site',
+    },
+    payment: {
+      bankTransfer: 'Bank Transfer',
+      qris: 'QRIS',
+      paypal: 'PayPal',
+      xendit: 'Xendit',
+    },
+  },
+
+  id: {
+    nav: {
+      destinations: 'Destinasi',
+      packages: 'Paket Wisata',
+      blog: 'Blog',
+      bookNow: 'Pesan Sekarang',
+      eastJava: 'Jawa Timur',
+      bali: 'Bali',
+      allPackages: 'Semua Paket',
+    },
+    hero: {
+      eyebrow: 'Perjalanan Sinematik Premium',
+      subtitle: 'Perjalanan darat dari Surabaya ke Bali. Sunrise Bromo, api biru Ijen, Tumpak Sewu — satu petualangan sempurna.',
+      explorePackages: 'Lihat Paket',
+      viewDestinations: 'Lihat Destinasi',
+    },
+    sections: {
+      destinations: 'Destinasi',
+      packages: 'Paket Wisata',
+      testimonials: 'Ulasan Terverifikasi',
+      fleet: 'Armada Kami',
+      blog: 'Jurnal Perjalanan',
+      departures: 'Jadwal Keberangkatan',
+    },
+    booking: {
+      title: 'Pesan Petualangan Anda',
+      subtitle: 'Tanpa akun · Konfirmasi langsung via WhatsApp',
+      step1: 'Pilih Paket',
+      step2: 'Titik Jemput',
+      step3: 'Data Diri',
+      step4: 'Pembayaran',
+      selectPackage: 'Paket Wisata',
+      departureDate: 'Tanggal Keberangkatan',
+      travelers: 'Jumlah Wisatawan',
+      totalEstimate: 'Total estimasi',
+      pickupPoint: 'Pilih Titik Penjemputan',
+      fullName: 'Nama Lengkap',
+      email: 'Alamat Email',
+      whatsapp: 'Nomor WhatsApp',
+      specialRequest: 'Permintaan Khusus',
+      specialRequestPlaceholder: 'Kebutuhan diet, aksesibilitas, perayaan khusus...',
+      namePlaceholder: 'Nama lengkap Anda',
+      emailPlaceholder: 'email@anda.com',
+      whatsappPlaceholder: '+62 812 3456 7890',
+      whatsappNote: 'Konfirmasi booking dan PDF itinerary akan dikirim ke nomor ini.',
+      paymentMethod: 'Metode Pembayaran',
+      orderSummary: 'Ringkasan Pesanan',
+      perPerson: '/ orang',
+      travelers_label: 'wisatawan',
+      departure: 'Keberangkatan',
+      total: 'Total',
+      confirmPay: 'Konfirmasi & Bayar',
+      continue: 'Lanjut',
+      back: 'Kembali',
+      freeCancel: 'Tanpa akun · Gratis pembatalan 72 jam sebelum keberangkatan',
+      seatsLeft: 'kursi tersisa',
+      confirmed: 'Booking Dikonfirmasi!',
+      confirmedSub: 'Petualangan Anda sudah terjamin. Cek WhatsApp Anda untuk konfirmasi.',
+      bookingCode: 'Kode Booking',
+      whatsappConfirm: 'Konfirmasi WhatsApp beserta PDF itinerary akan dikirim ke',
+      backHome: 'Beranda',
+      morePackages: 'Paket Lainnya',
+    },
+    packageDetail: {
+      duration: 'Durasi',
+      groupSize: 'Ukuran Grup',
+      rating: 'Rating',
+      distance: 'Jarak',
+      highlights: 'Highlight Perjalanan',
+      included: 'Yang Termasuk',
+      excluded: 'Tidak Termasuk',
+      itinerary: 'Itinerary Hari per Hari',
+      bookThis: 'Pesan Paket Ini',
+      seePackages: 'Lihat Paket',
+      perPerson: '/ orang',
+      seatsRemaining: 'kursi tersisa',
+    },
+    general: {
+      perPerson: '/ orang',
+      maxGroup: 'Maks',
+      seatsLeft: 'kursi tersisa',
+      readMore: 'Baca Artikel',
+      viewDetails: 'Lihat Detail',
+      exploreAll: 'Lihat Semua',
+      bookNow: 'Pesan Sekarang',
+      learnMore: 'Pelajari',
+      backToSite: 'Kembali ke Situs',
+    },
+    payment: {
+      bankTransfer: 'Transfer Bank',
+      qris: 'QRIS',
+      paypal: 'PayPal',
+      xendit: 'Xendit',
+    },
+  },
+
+  ja: {
+    nav: {
+      destinations: '目的地',
+      packages: 'ツアーパッケージ',
+      blog: 'ブログ',
+      bookNow: '今すぐ予約',
+      eastJava: '東ジャワ',
+      bali: 'バリ',
+      allPackages: 'すべてのパッケージ',
+    },
+    hero: {
+      eyebrow: 'プレミアム・シネマティック旅行',
+      subtitle: 'スラバヤからバリへのオーバーランド旅。ブロモの朝日、イジェンの青い火、トゥンパクセウの滝。',
+      explorePackages: 'パッケージを見る',
+      viewDestinations: '目的地を見る',
+    },
+    sections: {
+      destinations: '目的地',
+      packages: 'ツアーパッケージ',
+      testimonials: '口コミ',
+      fleet: '車両',
+      blog: '旅行ブログ',
+      departures: '出発スケジュール',
+    },
+    booking: {
+      title: '冒険を予約する',
+      subtitle: 'アカウント不要・WhatsAppで即確認',
+      step1: 'ツアー選択',
+      step2: '乗車地点',
+      step3: '個人情報',
+      step4: '支払い',
+      selectPackage: 'ツアーパッケージ',
+      departureDate: '出発日',
+      travelers: '人数',
+      totalEstimate: '合計見積もり',
+      pickupPoint: '乗車地点を選択',
+      fullName: 'お名前',
+      email: 'メールアドレス',
+      whatsapp: 'WhatsApp番号',
+      specialRequest: 'ご要望',
+      specialRequestPlaceholder: '食事制限、アクセシビリティ、特別なお祝いなど...',
+      namePlaceholder: 'お名前（フルネーム）',
+      emailPlaceholder: 'your@email.com',
+      whatsappPlaceholder: '+81 90 1234 5678',
+      whatsappNote: '予約確認書とPDF旅程はこちらに送付されます。',
+      paymentMethod: '支払い方法',
+      orderSummary: '注文概要',
+      perPerson: '/ 人',
+      travelers_label: '名',
+      departure: '出発日',
+      total: '合計',
+      confirmPay: '確認・支払い',
+      continue: '次へ',
+      back: '戻る',
+      freeCancel: 'アカウント不要・出発72時間前まで無料キャンセル',
+      seatsLeft: '席残り',
+      confirmed: '予約確定！',
+      confirmedSub: 'ご冒険が確定しました。WhatsAppで確認をご確認ください。',
+      bookingCode: '予約コード',
+      whatsappConfirm: 'WhatsAppの確認書とPDF旅程は次の番号に送付されます：',
+      backHome: 'ホーム',
+      morePackages: 'その他パッケージ',
+    },
+    packageDetail: {
+      duration: '期間',
+      groupSize: 'グループ人数',
+      rating: '評価',
+      distance: '距離',
+      highlights: 'ツアーハイライト',
+      included: '含まれるもの',
+      excluded: '含まれないもの',
+      itinerary: '日程',
+      bookThis: 'このパッケージを予約',
+      seePackages: 'パッケージを見る',
+      perPerson: '/ 人',
+      seatsRemaining: '席残り',
+    },
+    general: {
+      perPerson: '/ 人',
+      maxGroup: '最大',
+      seatsLeft: '席残り',
+      readMore: '記事を読む',
+      viewDetails: '詳細を見る',
+      exploreAll: 'すべて見る',
+      bookNow: '今すぐ予約',
+      learnMore: '詳しく',
+      backToSite: 'サイトに戻る',
+    },
+    payment: {
+      bankTransfer: '銀行振込',
+      qris: 'QRIS',
+      paypal: 'PayPal',
+      xendit: 'Xendit',
+    },
+  },
+
+  ko: {
+    nav: {
+      destinations: '목적지',
+      packages: '투어 패키지',
+      blog: '블로그',
+      bookNow: '지금 예약',
+      eastJava: '동부 자바',
+      bali: '발리',
+      allPackages: '모든 패키지',
+    },
+    hero: {
+      eyebrow: '프리미엄 시네마틱 여행',
+      subtitle: '수라바야에서 발리까지 육상 여행. 브로모 일출, 이젠 블루파이어, 툼팍 세우 폭포.',
+      explorePackages: '패키지 보기',
+      viewDestinations: '목적지 보기',
+    },
+    sections: {
+      destinations: '목적지',
+      packages: '투어 패키지',
+      testimonials: '인증된 리뷰',
+      fleet: '차량',
+      blog: '여행 일지',
+      departures: '출발 일정',
+    },
+    booking: {
+      title: '모험을 예약하세요',
+      subtitle: '계정 불필요 · WhatsApp으로 즉시 확인',
+      step1: '여행 선택',
+      step2: '픽업 장소',
+      step3: '개인 정보',
+      step4: '결제',
+      selectPackage: '투어 패키지',
+      departureDate: '출발일',
+      travelers: '여행자 수',
+      totalEstimate: '예상 총액',
+      pickupPoint: '픽업 장소 선택',
+      fullName: '성함',
+      email: '이메일 주소',
+      whatsapp: 'WhatsApp 번호',
+      specialRequest: '특별 요청',
+      specialRequestPlaceholder: '식이 요건, 접근성, 특별 기념일...',
+      namePlaceholder: '성함 (전체)',
+      emailPlaceholder: 'your@email.com',
+      whatsappPlaceholder: '+82 10 1234 5678',
+      whatsappNote: '예약 확인 및 PDF 일정표가 여기로 전송됩니다.',
+      paymentMethod: '결제 방법',
+      orderSummary: '주문 요약',
+      perPerson: '/ 인',
+      travelers_label: '명',
+      departure: '출발일',
+      total: '합계',
+      confirmPay: '확인 및 결제',
+      continue: '다음',
+      back: '이전',
+      freeCancel: '계정 불필요 · 출발 72시간 전 무료 취소',
+      seatsLeft: '석 남음',
+      confirmed: '예약 확정!',
+      confirmedSub: '모험이 확정되었습니다. WhatsApp 확인 메시지를 확인해주세요.',
+      bookingCode: '예약 코드',
+      whatsappConfirm: 'WhatsApp 확인 및 PDF 일정표가 다음 번호로 전송됩니다:',
+      backHome: '홈',
+      morePackages: '더 많은 패키지',
+    },
+    packageDetail: {
+      duration: '기간',
+      groupSize: '그룹 크기',
+      rating: '평점',
+      distance: '거리',
+      highlights: '투어 하이라이트',
+      included: '포함 사항',
+      excluded: '불포함 사항',
+      itinerary: '일정',
+      bookThis: '이 패키지 예약',
+      seePackages: '패키지 보기',
+      perPerson: '/ 인',
+      seatsRemaining: '석 남음',
+    },
+    general: {
+      perPerson: '/ 인',
+      maxGroup: '최대',
+      seatsLeft: '석 남음',
+      readMore: '기사 읽기',
+      viewDetails: '상세 보기',
+      exploreAll: '전체 보기',
+      bookNow: '지금 예약',
+      learnMore: '자세히',
+      backToSite: '사이트로 돌아가기',
+    },
+    payment: {
+      bankTransfer: '은행 이체',
+      qris: 'QRIS',
+      paypal: 'PayPal',
+      xendit: 'Xendit',
+    },
+  },
+
+  zh: {
+    nav: {
+      destinations: '目的地',
+      packages: '旅游套餐',
+      blog: '博客',
+      bookNow: '立即预订',
+      eastJava: '东爪哇',
+      bali: '巴厘岛',
+      allPackages: '全部套餐',
+    },
+    hero: {
+      eyebrow: '高端电影式旅行',
+      subtitle: '从泗水到巴厘岛的陆路旅程。婆罗摩日出，伊真蓝火，通帕克瀑布。',
+      explorePackages: '查看套餐',
+      viewDestinations: '查看目的地',
+    },
+    sections: {
+      destinations: '目的地',
+      packages: '旅游套餐',
+      testimonials: '真实评价',
+      fleet: '车队',
+      blog: '旅行日志',
+      departures: '出发日程',
+    },
+    booking: {
+      title: '预订您的冒险',
+      subtitle: '无需账户 · WhatsApp即时确认',
+      step1: '选择行程',
+      step2: '接送地点',
+      step3: '个人信息',
+      step4: '支付',
+      selectPackage: '旅游套餐',
+      departureDate: '出发日期',
+      travelers: '旅行人数',
+      totalEstimate: '预计总价',
+      pickupPoint: '选择接送地点',
+      fullName: '姓名',
+      email: '邮箱地址',
+      whatsapp: 'WhatsApp号码',
+      specialRequest: '特殊要求',
+      specialRequestPlaceholder: '饮食要求、无障碍需求、特别纪念日...',
+      namePlaceholder: '您的全名',
+      emailPlaceholder: 'your@email.com',
+      whatsappPlaceholder: '+86 138 0013 8000',
+      whatsappNote: '预订确认和PDF行程将发送至此号码。',
+      paymentMethod: '支付方式',
+      orderSummary: '订单摘要',
+      perPerson: '/ 人',
+      travelers_label: '人',
+      departure: '出发日期',
+      total: '总计',
+      confirmPay: '确认并支付',
+      continue: '继续',
+      back: '返回',
+      freeCancel: '无需账户 · 出发前72小时免费取消',
+      seatsLeft: '个座位',
+      confirmed: '预订已确认！',
+      confirmedSub: '您的冒险已确定。请查看WhatsApp上的确认信息。',
+      bookingCode: '预订代码',
+      whatsappConfirm: 'WhatsApp确认和PDF行程将发送至：',
+      backHome: '首页',
+      morePackages: '更多套餐',
+    },
+    packageDetail: {
+      duration: '时长',
+      groupSize: '团队规模',
+      rating: '评分',
+      distance: '距离',
+      highlights: '行程亮点',
+      included: '包含内容',
+      excluded: '不包含内容',
+      itinerary: '每日行程',
+      bookThis: '预订此套餐',
+      seePackages: '查看套餐',
+      perPerson: '/ 人',
+      seatsRemaining: '个座位',
+    },
+    general: {
+      perPerson: '/ 人',
+      maxGroup: '最多',
+      seatsLeft: '个位置',
+      readMore: '阅读文章',
+      viewDetails: '查看详情',
+      exploreAll: '查看全部',
+      bookNow: '立即预订',
+      learnMore: '了解更多',
+      backToSite: '返回网站',
+    },
+    payment: {
+      bankTransfer: '银行转账',
+      qris: 'QRIS',
+      paypal: 'PayPal',
+      xendit: 'Xendit',
+    },
+  },
+
+  de: {
+    nav: {
+      destinations: 'Reiseziele',
+      packages: 'Reisepakete',
+      blog: 'Blog',
+      bookNow: 'Jetzt buchen',
+      eastJava: 'Ostjava',
+      bali: 'Bali',
+      allPackages: 'Alle Pakete',
+    },
+    hero: {
+      eyebrow: 'Premium-Kinoerlebnis-Reisen',
+      subtitle: 'Überlandreisen von Surabaya nach Bali. Bromo-Sonnenaufgang, Ijen-Blaufeuer, Tumpak-Sewu-Wasserfall.',
+      explorePackages: 'Pakete ansehen',
+      viewDestinations: 'Reiseziele ansehen',
+    },
+    sections: {
+      destinations: 'Reiseziele',
+      packages: 'Reisepakete',
+      testimonials: 'Verifizierte Bewertungen',
+      fleet: 'Unsere Flotte',
+      blog: 'Reisetagebuch',
+      departures: 'Kommende Abfahrten',
+    },
+    booking: {
+      title: 'Ihr Abenteuer buchen',
+      subtitle: 'Kein Konto erforderlich · Sofortige WhatsApp-Bestätigung',
+      step1: 'Tour wählen',
+      step2: 'Abholpunkt',
+      step3: 'Ihre Daten',
+      step4: 'Zahlung',
+      selectPackage: 'Reisepaket',
+      departureDate: 'Abreisedatum',
+      travelers: 'Anzahl Reisende',
+      totalEstimate: 'Gesamtschätzung',
+      pickupPoint: 'Abholpunkt auswählen',
+      fullName: 'Vollständiger Name',
+      email: 'E-Mail-Adresse',
+      whatsapp: 'WhatsApp-Nummer',
+      specialRequest: 'Sonderwünsche',
+      specialRequestPlaceholder: 'Ernährungsanforderungen, Barrierefreiheit, besondere Anlässe...',
+      namePlaceholder: 'Ihr vollständiger Name',
+      emailPlaceholder: 'your@email.com',
+      whatsappPlaceholder: '+49 170 1234567',
+      whatsappNote: 'Ihre Buchungsbestätigung und PDF-Reiseroute werden hierher gesendet.',
+      paymentMethod: 'Zahlungsmethode',
+      orderSummary: 'Bestellübersicht',
+      perPerson: '/ Person',
+      travelers_label: 'Reisende',
+      departure: 'Abreise',
+      total: 'Gesamt',
+      confirmPay: 'Bestätigen & Zahlen',
+      continue: 'Weiter',
+      back: 'Zurück',
+      freeCancel: 'Kein Konto nötig · Kostenlose Stornierung 72h vorher',
+      seatsLeft: 'Plätze übrig',
+      confirmed: 'Buchung bestätigt!',
+      confirmedSub: 'Ihr Abenteuer ist gesichert. Prüfen Sie WhatsApp für die Bestätigung.',
+      bookingCode: 'Buchungscode',
+      whatsappConfirm: 'Bestätigung und PDF-Reiseroute werden gesendet an:',
+      backHome: 'Startseite',
+      morePackages: 'Weitere Pakete',
+    },
+    packageDetail: {
+      duration: 'Dauer',
+      groupSize: 'Gruppengröße',
+      rating: 'Bewertung',
+      distance: 'Entfernung',
+      highlights: 'Tour-Highlights',
+      included: 'Inklusive',
+      excluded: 'Nicht inklusive',
+      itinerary: 'Tagesplan',
+      bookThis: 'Dieses Paket buchen',
+      seePackages: 'Pakete ansehen',
+      perPerson: '/ Person',
+      seatsRemaining: 'Plätze übrig',
+    },
+    general: {
+      perPerson: '/ Person',
+      maxGroup: 'Max.',
+      seatsLeft: 'Plätze',
+      readMore: 'Artikel lesen',
+      viewDetails: 'Details',
+      exploreAll: 'Alle ansehen',
+      bookNow: 'Jetzt buchen',
+      learnMore: 'Mehr erfahren',
+      backToSite: 'Zurück zur Website',
+    },
+    payment: {
+      bankTransfer: 'Banküberweisung',
+      qris: 'QRIS',
+      paypal: 'PayPal',
+      xendit: 'Xendit',
+    },
+  },
+
+  fr: {
+    nav: { destinations: 'Destinations', packages: 'Forfaits', blog: 'Blog', bookNow: 'Réserver', eastJava: 'Java-Est', bali: 'Bali', allPackages: 'Tous les forfaits' },
+    hero: { eyebrow: 'Voyages Cinématiques Premium', subtitle: "Voyages terrestres de Surabaya à Bali. Lever du soleil sur Bromo, feux bleus d'Ijen, chutes Tumpak Sewu.", explorePackages: 'Voir les forfaits', viewDestinations: 'Voir les destinations' },
+    sections: { destinations: 'Destinations', packages: 'Forfaits', testimonials: 'Avis Vérifiés', fleet: 'Notre Flotte', blog: 'Journal de Voyage', departures: 'Prochains Départs' },
+    booking: { title: 'Réservez Votre Aventure', subtitle: 'Sans compte · Confirmation WhatsApp immédiate', step1: 'Choisir', step2: 'Prise en charge', step3: 'Vos Données', step4: 'Paiement', selectPackage: 'Forfait', departureDate: 'Date de départ', travelers: 'Nombre de voyageurs', totalEstimate: 'Estimation totale', pickupPoint: 'Point de prise en charge', fullName: 'Nom complet', email: 'Adresse e-mail', whatsapp: 'Numéro WhatsApp', specialRequest: 'Demandes spéciales', specialRequestPlaceholder: 'Régime alimentaire, accessibilité, occasions spéciales...', namePlaceholder: 'Votre nom complet', emailPlaceholder: 'your@email.com', whatsappPlaceholder: '+33 6 12 34 56 78', whatsappNote: 'Votre confirmation et PDF itinéraire seront envoyés ici.', paymentMethod: 'Méthode de paiement', orderSummary: 'Récapitulatif', perPerson: '/ pers.', travelers_label: 'voyageur(s)', departure: 'Départ', total: 'Total', confirmPay: 'Confirmer & Payer', continue: 'Continuer', back: 'Retour', freeCancel: 'Sans compte · Annulation gratuite 72h avant', seatsLeft: 'places restantes', confirmed: 'Réservation Confirmée!', confirmedSub: 'Votre aventure est sécurisée. Vérifiez WhatsApp.', bookingCode: 'Code de réservation', whatsappConfirm: 'Confirmation et PDF envoyés à :', backHome: 'Accueil', morePackages: 'Plus de forfaits' },
+    packageDetail: { duration: 'Durée', groupSize: 'Taille du groupe', rating: 'Note', distance: 'Distance', highlights: 'Points forts', included: 'Inclus', excluded: 'Non inclus', itinerary: 'Programme', bookThis: 'Réserver ce forfait', seePackages: 'Voir les forfaits', perPerson: '/ pers.', seatsRemaining: 'places' },
+    general: { perPerson: '/ pers.', maxGroup: 'Max', seatsLeft: 'places', readMore: 'Lire', viewDetails: 'Détails', exploreAll: 'Voir tout', bookNow: 'Réserver', learnMore: 'En savoir plus', backToSite: 'Retour au site' },
+    payment: { bankTransfer: 'Virement bancaire', qris: 'QRIS', paypal: 'PayPal', xendit: 'Xendit' },
+  },
+
+  es: {
+    nav: { destinations: 'Destinos', packages: 'Paquetes', blog: 'Blog', bookNow: 'Reservar', eastJava: 'Java Oriental', bali: 'Bali', allPackages: 'Todos los paquetes' },
+    hero: { eyebrow: 'Viajes Cinematográficos Premium', subtitle: 'Viajes por tierra de Surabaya a Bali. Amanecer en Bromo, fuego azul Ijen, cascada Tumpak Sewu.', explorePackages: 'Ver paquetes', viewDestinations: 'Ver destinos' },
+    sections: { destinations: 'Destinos', packages: 'Paquetes', testimonials: 'Opiniones Verificadas', fleet: 'Nuestra Flota', blog: 'Diario de Viaje', departures: 'Próximas Salidas' },
+    booking: { title: 'Reserva Tu Aventura', subtitle: 'Sin cuenta · Confirmación instantánea por WhatsApp', step1: 'Elegir', step2: 'Recogida', step3: 'Tus Datos', step4: 'Pago', selectPackage: 'Paquete', departureDate: 'Fecha de salida', travelers: 'Viajeros', totalEstimate: 'Total estimado', pickupPoint: 'Punto de recogida', fullName: 'Nombre completo', email: 'Correo electrónico', whatsapp: 'Número WhatsApp', specialRequest: 'Solicitudes especiales', specialRequestPlaceholder: 'Dieta, accesibilidad, ocasiones especiales...', namePlaceholder: 'Tu nombre completo', emailPlaceholder: 'tu@email.com', whatsappPlaceholder: '+34 612 345 678', whatsappNote: 'Tu confirmación y PDF del itinerario se enviarán aquí.', paymentMethod: 'Método de pago', orderSummary: 'Resumen del pedido', perPerson: '/ persona', travelers_label: 'viajero(s)', departure: 'Salida', total: 'Total', confirmPay: 'Confirmar y Pagar', continue: 'Continuar', back: 'Atrás', freeCancel: 'Sin cuenta · Cancelación gratuita 72h antes', seatsLeft: 'plazas restantes', confirmed: '¡Reserva Confirmada!', confirmedSub: 'Tu aventura está asegurada. Revisa WhatsApp.', bookingCode: 'Código de reserva', whatsappConfirm: 'Confirmación y PDF enviados a:', backHome: 'Inicio', morePackages: 'Más paquetes' },
+    packageDetail: { duration: 'Duración', groupSize: 'Grupo', rating: 'Puntuación', distance: 'Distancia', highlights: 'Destacados', included: 'Incluido', excluded: 'No incluido', itinerary: 'Itinerario', bookThis: 'Reservar', seePackages: 'Ver paquetes', perPerson: '/ persona', seatsRemaining: 'plazas' },
+    general: { perPerson: '/ persona', maxGroup: 'Máx.', seatsLeft: 'plazas', readMore: 'Leer', viewDetails: 'Detalles', exploreAll: 'Ver todo', bookNow: 'Reservar', learnMore: 'Más info', backToSite: 'Volver al sitio' },
+    payment: { bankTransfer: 'Transferencia bancaria', qris: 'QRIS', paypal: 'PayPal', xendit: 'Xendit' },
+  },
+
+  ru: {
+    nav: { destinations: 'Направления', packages: 'Туры', blog: 'Блог', bookNow: 'Забронировать', eastJava: 'Восточная Ява', bali: 'Бали', allPackages: 'Все туры' },
+    hero: { eyebrow: 'Премиум-путешествия', subtitle: 'Наземные маршруты от Сурабаи до Бали. Рассвет над Бромо, синий огонь Иджен, водопад Тумпак-Sewu.', explorePackages: 'Смотреть туры', viewDestinations: 'Смотреть направления' },
+    sections: { destinations: 'Направления', packages: 'Туры', testimonials: 'Отзывы', fleet: 'Наш автопарк', blog: 'Путевые заметки', departures: 'Ближайшие отправления' },
+    booking: { title: 'Забронируйте приключение', subtitle: 'Без регистрации · Мгновенное подтверждение в WhatsApp', step1: 'Выбор тура', step2: 'Точка встречи', step3: 'Ваши данные', step4: 'Оплата', selectPackage: 'Тур', departureDate: 'Дата отправления', travelers: 'Количество туристов', totalEstimate: 'Итого (примерно)', pickupPoint: 'Выберите место встречи', fullName: 'Полное имя', email: 'Электронная почта', whatsapp: 'Номер WhatsApp', specialRequest: 'Особые пожелания', specialRequestPlaceholder: 'Диетические требования, доступность, особые поводы...', namePlaceholder: 'Ваше полное имя', emailPlaceholder: 'your@email.com', whatsappPlaceholder: '+7 912 345-67-89', whatsappNote: 'Подтверждение бронирования и PDF маршрута будут отправлены сюда.', paymentMethod: 'Способ оплаты', orderSummary: 'Итоги заказа', perPerson: '/ чел.', travelers_label: 'чел.', departure: 'Отправление', total: 'Итого', confirmPay: 'Подтвердить и оплатить', continue: 'Далее', back: 'Назад', freeCancel: 'Без аккаунта · Бесплатная отмена за 72 ч', seatsLeft: 'мест осталось', confirmed: 'Бронирование подтверждено!', confirmedSub: 'Ваше приключение обеспечено. Проверьте WhatsApp.', bookingCode: 'Код бронирования', whatsappConfirm: 'Подтверждение и PDF маршрута будут отправлены на:', backHome: 'Главная', morePackages: 'Ещё туры' },
+    packageDetail: { duration: 'Продолжительность', groupSize: 'Размер группы', rating: 'Рейтинг', distance: 'Расстояние', highlights: 'Основные моменты', included: 'Включено', excluded: 'Не включено', itinerary: 'Программа', bookThis: 'Забронировать', seePackages: 'Туры', perPerson: '/ чел.', seatsRemaining: 'мест' },
+    general: { perPerson: '/ чел.', maxGroup: 'Макс.', seatsLeft: 'мест', readMore: 'Читать', viewDetails: 'Подробнее', exploreAll: 'Всё', bookNow: 'Забронировать', learnMore: 'Узнать', backToSite: 'На сайт' },
+    payment: { bankTransfer: 'Банковский перевод', qris: 'QRIS', paypal: 'PayPal', xendit: 'Xendit' },
+  },
+
+  th: {
+    nav: { destinations: 'จุดหมาย', packages: 'แพ็กเกจทัวร์', blog: 'บล็อก', bookNow: 'จองเลย', eastJava: 'ชวาตะวันออก', bali: 'บาหลี', allPackages: 'ทุกแพ็กเกจ' },
+    hero: { eyebrow: 'การท่องเที่ยวระดับพรีเมียม', subtitle: 'เดินทางทางบกจากสุราบายาสู่บาหลี พระอาทิตย์ขึ้นที่โบรโม ไฟสีน้ำเงินอีเจน น้ำตกทัมปัคเสวู', explorePackages: 'ดูแพ็กเกจ', viewDestinations: 'ดูจุดหมาย' },
+    sections: { destinations: 'จุดหมาย', packages: 'แพ็กเกจทัวร์', testimonials: 'รีวิวที่ยืนยัน', fleet: 'รถของเรา', blog: 'บันทึกการเดินทาง', departures: 'กำหนดการออกเดินทาง' },
+    booking: { title: 'จองการผจญภัยของคุณ', subtitle: 'ไม่ต้องมีบัญชี · ยืนยันทันทีทาง WhatsApp', step1: 'เลือกทัวร์', step2: 'จุดรับ', step3: 'ข้อมูลของคุณ', step4: 'ชำระเงิน', selectPackage: 'แพ็กเกจทัวร์', departureDate: 'วันออกเดินทาง', travelers: 'จำนวนนักท่องเที่ยว', totalEstimate: 'ราคาประเมิน', pickupPoint: 'เลือกจุดรับ', fullName: 'ชื่อเต็ม', email: 'อีเมล', whatsapp: 'เบอร์ WhatsApp', specialRequest: 'ความต้องการพิเศษ', specialRequestPlaceholder: 'ข้อจำกัดด้านอาหาร การเข้าถึง โอกาสพิเศษ...', namePlaceholder: 'ชื่อเต็มของคุณ', emailPlaceholder: 'your@email.com', whatsappPlaceholder: '+66 81 234 5678', whatsappNote: 'การยืนยันการจองและ PDF จะส่งไปที่นี่', paymentMethod: 'วิธีการชำระเงิน', orderSummary: 'สรุปคำสั่งซื้อ', perPerson: '/ คน', travelers_label: 'คน', departure: 'วันออกเดินทาง', total: 'รวม', confirmPay: 'ยืนยันและชำระเงิน', continue: 'ถัดไป', back: 'ย้อนกลับ', freeCancel: 'ไม่ต้องมีบัญชี · ยกเลิกฟรีก่อน 72 ชั่วโมง', seatsLeft: 'ที่นั่งเหลือ', confirmed: 'ยืนยันการจองแล้ว!', confirmedSub: 'การผจญภัยของคุณได้รับการรับรองแล้ว ตรวจสอบ WhatsApp', bookingCode: 'รหัสการจอง', whatsappConfirm: 'การยืนยันและ PDF จะส่งไปที่:', backHome: 'หน้าหลัก', morePackages: 'แพ็กเกจอื่น' },
+    packageDetail: { duration: 'ระยะเวลา', groupSize: 'ขนาดกลุ่ม', rating: 'คะแนน', distance: 'ระยะทาง', highlights: 'ไฮไลต์', included: 'รวมอยู่', excluded: 'ไม่รวม', itinerary: 'กำหนดการ', bookThis: 'จองแพ็กเกจนี้', seePackages: 'ดูแพ็กเกจ', perPerson: '/ คน', seatsRemaining: 'ที่นั่ง' },
+    general: { perPerson: '/ คน', maxGroup: 'สูงสุด', seatsLeft: 'ที่นั่ง', readMore: 'อ่านบทความ', viewDetails: 'รายละเอียด', exploreAll: 'ดูทั้งหมด', bookNow: 'จองเลย', learnMore: 'เรียนรู้เพิ่ม', backToSite: 'กลับไปที่เว็บไซต์' },
+    payment: { bankTransfer: 'โอนเงินธนาคาร', qris: 'QRIS', paypal: 'PayPal', xendit: 'Xendit' },
+  },
+} as const
+
+// ── Context ────────────────────────────────────────────────────────────────────
+
+interface LanguageContextType {
+  lang: LangCode
+  setLang: (l: LangCode) => void
+  t: typeof translations['en']
+  currency: CurrencyConfig
+  formatPrice: (usd: number) => string
+  formatPriceCompact: (usd: number) => string
+}
+
+const LanguageContext = createContext<LanguageContextType | null>(null)
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [lang, setLang] = useState<LangCode>('en')
+
+  const t = translations[lang] as typeof translations['en']
+  const currency = currencyMap[lang]
+
+  const formatPrice = (usd: number): string => {
+    const amount = Math.round(usd * currency.rateFromUSD)
+    if (currency.code === 'IDR') {
+      return `Rp ${amount.toLocaleString('id-ID')}`
+    }
+    if (currency.code === 'JPY' || currency.code === 'KRW') {
+      return `${currency.symbol}${amount.toLocaleString('en-US')}`
+    }
+    if (currency.code === 'RUB') {
+      return `${amount.toLocaleString('ru-RU')} ₽`
+    }
+    return `${currency.symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: currency.code === 'USD' ? 0 : 0 })}`
+  }
+
+  const formatPriceCompact = (usd: number): string => {
+    const amount = Math.round(usd * currency.rateFromUSD)
+    if (currency.code === 'IDR') {
+      if (amount >= 1_000_000) return `Rp ${(amount / 1_000_000).toFixed(1)}jt`
+      return `Rp ${(amount / 1000).toFixed(0)}rb`
+    }
+    if (currency.code === 'JPY' || currency.code === 'KRW') {
+      return `${currency.symbol}${amount.toLocaleString('en-US')}`
+    }
+    return formatPrice(usd)
+  }
+
+  return (
+    <LanguageContext.Provider value={{ lang, setLang, t, currency, formatPrice, formatPriceCompact }}>
+      {children}
+    </LanguageContext.Provider>
+  )
+}
+
+export function useLanguage() {
+  const ctx = useContext(LanguageContext)
+  if (!ctx) throw new Error('useLanguage must be used inside LanguageProvider')
+  return ctx
+}
