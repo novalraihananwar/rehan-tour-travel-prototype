@@ -1,28 +1,41 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
+import { useState } from 'react'
 import { Clock, ArrowRight } from 'lucide-react'
 import { blogPosts } from '@/lib/data'
 
-export const metadata: Metadata = {
-  title: 'Travel Blog — East Java & Bali Stories & Guides',
-  description: 'Insider guides, hidden gems, and cinematic stories from East Java and Bali. Mount Bromo, Ijen, Tumpak Sewu, Bali travel tips.',
-}
-
 const categoryColors: Record<string, string> = {
-  'East Java Adventure': 'bg-sunset/15 text-sunset border-sunset/25',
-  'Hidden Gems Indonesia': 'bg-gold/15 text-gold border-gold/25',
-  'Volcano Adventures': 'bg-lava/15 text-red-300 border-red-400/25',
-  'Backpacker Tips': 'bg-jungle/15 text-jungle-light border-jungle/25',
-  'Bali Travel Guide': 'bg-ocean/15 text-ocean-light border-ocean/25',
-  'Cultural Experiences': 'bg-white/8 text-cream-dark border-white/15',
+  'East Java': 'bg-sunset/15 text-sunset border-sunset/25',
+  'Hidden Gems': 'bg-gold/15 text-gold border-gold/25',
+  'Volcano': 'bg-lava/15 text-red-300 border-red-400/25',
+  'Tips': 'bg-jungle/15 text-jungle-light border-jungle/25',
+  'Bali': 'bg-ocean/15 text-ocean-light border-ocean/25',
+  'Culture': 'bg-white/8 text-cream-dark border-white/15',
 }
 
-const categories = ['All', 'East Java Adventure', 'Hidden Gems Indonesia', 'Bali Travel Guide', 'Backpacker Tips', 'Volcano Adventures', 'Cultural Experiences']
+const categoryMap: Record<string, string> = {
+  'East Java Adventure': 'East Java',
+  'Hidden Gems Indonesia': 'Hidden Gems',
+  'Volcano Adventures': 'Volcano',
+  'Backpacker Tips': 'Tips',
+  'Bali Travel Guide': 'Bali',
+  'Cultural Experiences': 'Culture',
+}
+
+const tags = ['All', 'East Java', 'Bali', 'Volcano', 'Hidden Gems', 'Tips', 'Culture']
 
 export default function BlogPage() {
-  const featured = blogPosts.find(p => p.featured)
-  const rest = blogPosts.filter(p => !p.featured || p.id !== featured?.id)
+  const [activeTag, setActiveTag] = useState('All')
+
+  const filtered = blogPosts.filter(p => {
+    if (activeTag === 'All') return true
+    return categoryMap[p.category] === activeTag
+  })
+
+  const featured = filtered.find(p => p.featured) || filtered[0]
+  const rest = filtered.filter(p => p.id !== featured?.id)
 
   return (
     <div className="min-h-screen bg-volcanic pt-20">
@@ -35,16 +48,24 @@ export default function BlogPage() {
           <h1 className="font-display text-display-xl text-cream mb-3">
             Stories, Guides &<br /><span className="text-gradient-sunset">Hidden Gems</span>
           </h1>
-          <p className="text-cream-muted max-w-xl mx-auto">Expert insights from years of guiding international travelers across East Java and Bali.</p>
+          <p className="text-cream-muted max-w-xl mx-auto">Insider guides and real stories from years of guiding travelers across East Java and Bali.</p>
         </div>
       </div>
 
       <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Category nav */}
-        <div className="flex flex-wrap gap-2 mb-10">
-          {categories.map((cat) => (
-            <button key={cat} className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${cat === 'All' ? 'bg-gradient-to-r from-sunset to-gold text-volcanic border-transparent' : `border-white/10 text-cream-muted hover:border-sunset/25 hover:text-cream ${categoryColors[cat] || ''}`}`}>
-              {cat}
+        {/* Tags — single row, short labels */}
+        <div className="flex items-center gap-2 mb-10 overflow-x-auto pb-1">
+          {tags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(tag)}
+              className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                activeTag === tag
+                  ? 'bg-gradient-to-r from-sunset to-gold text-volcanic border-transparent'
+                  : `border-white/10 text-cream-muted hover:border-white/25 hover:text-cream ${categoryColors[tag] ? categoryColors[tag] + ' opacity-70 hover:opacity-100' : ''}`
+              }`}
+            >
+              {tag}
             </button>
           ))}
         </div>
@@ -57,7 +78,7 @@ export default function BlogPage() {
                 <Image src={featured.coverImage} alt={featured.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
               </div>
               <div className="p-8 flex flex-col justify-center">
-                <span className={`inline-block text-xs font-medium px-3 py-1 rounded-full border mb-4 ${categoryColors[featured.category] || ''}`}>
+                <span className={`inline-block text-xs font-medium px-3 py-1 rounded-full border mb-4 ${categoryColors[categoryMap[featured.category]] || ''}`}>
                   {featured.category}
                 </span>
                 <h2 className="font-display text-2xl md:text-3xl text-cream group-hover:text-sunset transition-colors mb-3 leading-snug">{featured.title}</h2>
@@ -87,7 +108,7 @@ export default function BlogPage() {
                 <Image src={post.coverImage} alt={post.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 100vw, 33vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-volcanic-200 to-transparent" />
                 <div className="absolute top-3 left-3">
-                  <span className={`text-xs font-medium px-3 py-1 rounded-full border backdrop-blur-sm ${categoryColors[post.category] || ''}`}>{post.category}</span>
+                  <span className={`text-xs font-medium px-3 py-1 rounded-full border backdrop-blur-sm ${categoryColors[categoryMap[post.category]] || ''}`}>{post.category}</span>
                 </div>
               </div>
               <div className="p-5">

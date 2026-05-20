@@ -46,47 +46,47 @@ export function DestinationsPageClient() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="sticky top-20 z-40 py-4 glass border-b border-white/5">
-        <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-4">
+      {/* Filters — unified sticky bar */}
+      <div className="sticky top-20 z-40 py-3 glass border-b border-white/5">
+        <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row gap-3">
           {/* Search */}
-          <div className="relative flex-1">
+          <div className="relative sm:w-56 shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cream-muted" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search destinations..."
-              className="input-dark pl-10 text-sm py-2.5 w-full"
+              placeholder="Search..."
+              className="input-dark pl-9 text-sm py-2 w-full"
             />
           </div>
 
-          {/* Region tabs */}
-          <div className="flex gap-2">
+          {/* Unified filter pills — region + divider + category */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 flex-1">
             {regions.map((r) => (
               <button
                 key={r}
                 onClick={() => setRegion(r)}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                   region === r
                     ? 'bg-gradient-to-r from-sunset to-gold text-volcanic'
-                    : 'text-cream-muted hover:text-cream border border-white/10'
+                    : 'text-cream-muted border border-white/10 hover:border-white/25 hover:text-cream'
                 }`}
               >
                 {r}
               </button>
             ))}
-          </div>
 
-          {/* Category filter */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {categories.slice(0, 5).map((c) => (
+            {/* Divider */}
+            <div className="w-px h-4 bg-white/15 mx-1 shrink-0" />
+
+            {categories.slice(1).map((c) => (
               <button
                 key={c}
-                onClick={() => setCategory(c)}
-                className={`shrink-0 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                onClick={() => setCategory(category === c ? 'All' : c)}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                   category === c
                     ? 'bg-sunset/20 text-sunset border border-sunset/30'
-                    : 'text-cream-muted border border-white/8 hover:border-sunset/20'
+                    : 'text-cream-muted border border-white/8 hover:border-white/20 hover:text-cream'
                 }`}
               >
                 {c}

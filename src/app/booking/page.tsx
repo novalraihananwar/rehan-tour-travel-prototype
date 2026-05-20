@@ -48,21 +48,22 @@ function BookingPageInner() {
   const totalPriceUSD = selectedPkg ? selectedPkg.price.usd * formData.guests : 0
   const pickupFeeUSD = formData.pickupFee / 15000
 
+  const TOTAL_STEPS = 5
   const steps = [
-    { id: 1, label: t.booking.step1, icon: Calendar },
-    { id: 2, label: t.booking.step2, icon: MapPin },
-    { id: 3, label: t.booking.step3, icon: User },
-    { id: 4, label: t.booking.step4, icon: CreditCard },
+    { id: 1, label: 'Package', icon: Calendar },
+    { id: 2, label: 'Date & Guests', icon: Calendar },
+    { id: 3, label: 'Pickup', icon: MapPin },
+    { id: 4, label: 'Details', icon: User },
+    { id: 5, label: 'Payment', icon: CreditCard },
   ]
 
   const paymentMethods = [
-    { id: 'bank-transfer', label: t.payment.bankTransfer, icon: '🏦' },
-    { id: 'qris', label: t.payment.qris, icon: '📱' },
-    { id: 'paypal', label: t.payment.paypal, icon: '💳' },
-    { id: 'xendit', label: t.payment.xendit, icon: '⚡' },
+    { id: 'bank-transfer', label: t.payment.bankTransfer, icon: 'Bank' },
+    { id: 'qris', label: t.payment.qris, icon: 'QRIS' },
+    { id: 'paypal', label: t.payment.paypal, icon: 'PayPal' },
+    { id: 'xendit', label: t.payment.xendit, icon: 'Xendit' },
   ]
 
-  // Fix: use T12:00:00 so the date string is treated as local time, not UTC
   const formatDate = (dateStr: string) =>
     new Date(dateStr + 'T12:00:00').toLocaleDateString(currency.locale, {
       weekday: 'long', month: 'long', day: 'numeric',
@@ -73,7 +74,7 @@ function BookingPageInner() {
       weekday: 'short', month: 'long', day: 'numeric',
     })
 
-  const handleNext = () => step < 4 && setStep(step + 1)
+  const handleNext = () => step < TOTAL_STEPS && setStep(step + 1)
   const handleBack = () => step > 1 && setStep(step - 1)
   const handleSubmit = () => setSubmitted(true)
 
@@ -146,18 +147,26 @@ function BookingPageInner() {
 
       {/* Progress steps */}
       <div className="max-w-3xl mx-auto px-4 mb-8">
-        <div className="flex items-center justify-center gap-2">
-          {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+        {/* Progress bar */}
+        <div className="w-full bg-volcanic-400 rounded-full h-1 mb-4">
+          <div
+            className="h-1 rounded-full bg-gradient-to-r from-sunset to-gold transition-all duration-500"
+            style={{ width: `${((step - 1) / (TOTAL_STEPS - 1)) * 100}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          {steps.map((s) => (
+            <div key={s.id} className="flex flex-col items-center gap-1">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                 step === s.id ? 'bg-gradient-to-r from-sunset to-gold text-volcanic' :
-                step > s.id ? 'bg-jungle/20 text-jungle-light border border-jungle/25' :
+                step > s.id ? 'bg-jungle/25 text-jungle-light border border-jungle/30' :
                 'bg-volcanic-400/50 text-cream-muted border border-white/8'
               }`}>
-                {step > s.id ? <Check className="w-3.5 h-3.5" /> : <s.icon className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{s.label}</span>
+                {step > s.id ? <Check className="w-3.5 h-3.5" /> : s.id}
               </div>
-              {i < steps.length - 1 && <div className={`w-6 h-px ${step > s.id ? 'bg-jungle/40' : 'bg-white/10'}`} />}
+              <span className={`text-xs hidden sm:block transition-colors ${step === s.id ? 'text-cream' : 'text-cream-muted'}`}>
+                {s.label}
+              </span>
             </div>
           ))}
         </div>
@@ -166,39 +175,52 @@ function BookingPageInner() {
       {/* Form */}
       <div className="max-w-3xl mx-auto px-4 pb-20">
         <AnimatePresence mode="wait">
+          {/* Step 1 — Choose package */}
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="glass-card rounded-2xl p-6 md:p-8">
-              <h2 className="font-display text-xl text-cream mb-6">{t.booking.step1}</h2>
-
-              {/* Package selector */}
-              <div className="mb-6">
-                <label className="text-xs text-cream-muted uppercase tracking-wider block mb-3">{t.booking.selectPackage}</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {tourPackages.slice(0, 5).map((pkg) => (
-                    <div
-                      key={pkg.id}
-                      onClick={() => setFormData({ ...formData, packageId: pkg.slug })}
-                      className={`flex gap-4 p-4 rounded-xl cursor-pointer border transition-all duration-200 ${formData.packageId === pkg.slug ? 'border-sunset/50 bg-sunset/8' : 'border-white/8 hover:border-sunset/25 bg-volcanic-400/30'}`}
-                    >
-                      <div className="relative w-16 h-14 rounded-lg overflow-hidden shrink-0">
-                        <Image src={pkg.coverImage} alt={pkg.title} fill className="object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-cream">{pkg.title}</p>
-                        <p className="text-xs text-cream-muted mt-0.5">{pkg.duration} · {formatPrice(pkg.price.usd)}{t.booking.perPerson}</p>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 shrink-0 mt-1 flex items-center justify-center ${formData.packageId === pkg.slug ? 'border-sunset bg-sunset' : 'border-white/25'}`}>
-                        {formData.packageId === pkg.slug && <Check className="w-3 h-3 text-volcanic" />}
-                      </div>
+              <h2 className="font-display text-xl text-cream mb-2">Which trip?</h2>
+              <p className="text-sm text-cream-muted mb-6">Select the package you want to book.</p>
+              <div className="grid grid-cols-1 gap-3">
+                {tourPackages.slice(0, 5).map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    onClick={() => setFormData({ ...formData, packageId: pkg.slug })}
+                    className={`flex gap-4 p-4 rounded-xl cursor-pointer border transition-all duration-200 ${formData.packageId === pkg.slug ? 'border-sunset/50 bg-sunset/8' : 'border-white/8 hover:border-sunset/25 bg-volcanic-400/30'}`}
+                  >
+                    <div className="relative w-16 h-14 rounded-lg overflow-hidden shrink-0">
+                      <Image src={pkg.coverImage} alt={pkg.title} fill className="object-cover" />
                     </div>
-                  ))}
-                </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-cream">{pkg.title}</p>
+                      <p className="text-xs text-cream-muted mt-0.5">{pkg.duration} · from {formatPrice(pkg.price.usd)} / person</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 shrink-0 mt-1 flex items-center justify-center ${formData.packageId === pkg.slug ? 'border-sunset bg-sunset' : 'border-white/25'}`}>
+                      {formData.packageId === pkg.slug && <Check className="w-3 h-3 text-volcanic" />}
+                    </div>
+                  </div>
+                ))}
               </div>
+            </motion.div>
+          )}
 
-              {/* Date & Guests */}
+          {/* Step 2 — Date & Guests */}
+          {step === 2 && (
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="glass-card rounded-2xl p-6 md:p-8">
+              {selectedPkg && (
+                <div className="flex items-center gap-3 mb-6 pb-5 border-b border-white/8">
+                  <div className="relative w-12 h-10 rounded-lg overflow-hidden shrink-0">
+                    <Image src={selectedPkg.coverImage} alt={selectedPkg.title} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-cream">{selectedPkg.title}</p>
+                    <p className="text-xs text-cream-muted">{selectedPkg.duration}</p>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-3">{t.booking.departureDate}</label>
+                  <h2 className="font-display text-lg text-cream mb-1">When?</h2>
+                  <p className="text-xs text-cream-muted mb-4">Highlighted dates = next departures</p>
                   <BookingCalendar
                     onDateSelect={(d) => {
                       const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -209,17 +231,20 @@ function BookingPageInner() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-3">{t.booking.travelers}</label>
-                  <div className="glass-card rounded-2xl p-4">
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => setFormData({ ...formData, guests: Math.max(1, formData.guests - 1) })} className="w-10 h-10 rounded-full border border-white/15 flex items-center justify-center text-cream text-xl">−</button>
-                      <span className="text-3xl font-bold text-cream font-display flex-1 text-center">{formData.guests}</span>
-                      <button onClick={() => setFormData({ ...formData, guests: Math.min(15, formData.guests + 1) })} className="w-10 h-10 rounded-full border border-white/15 flex items-center justify-center text-cream text-xl">+</button>
+                  <h2 className="font-display text-lg text-cream mb-1">How many?</h2>
+                  <p className="text-xs text-cream-muted mb-4">Number of travelers</p>
+                  <div className="glass-card rounded-2xl p-6 text-center">
+                    <div className="flex items-center justify-center gap-6">
+                      <button onClick={() => setFormData({ ...formData, guests: Math.max(1, formData.guests - 1) })} className="w-11 h-11 rounded-full border border-white/15 flex items-center justify-center text-cream text-2xl hover:border-sunset/40 transition-colors">−</button>
+                      <span className="text-5xl font-bold text-cream font-display w-12">{formData.guests}</span>
+                      <button onClick={() => setFormData({ ...formData, guests: Math.min(15, formData.guests + 1) })} className="w-11 h-11 rounded-full border border-white/15 flex items-center justify-center text-cream text-2xl hover:border-sunset/40 transition-colors">+</button>
                     </div>
+                    <p className="text-xs text-cream-muted mt-4">Max {selectedPkg?.maxGroupSize || 15} per group</p>
                     {selectedPkg && (
-                      <p className="text-center text-xs text-cream-muted mt-3">
-                        {t.booking.totalEstimate}: <span className="text-sunset font-medium">{formatPrice(selectedPkg.price.usd * formData.guests)}</span>
-                      </p>
+                      <div className="mt-4 pt-4 border-t border-white/8">
+                        <p className="text-xs text-cream-muted">Estimated total</p>
+                        <p className="text-xl font-bold text-gradient-sunset font-display mt-1">{formatPrice(selectedPkg.price.usd * formData.guests)}</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -227,7 +252,8 @@ function BookingPageInner() {
             </motion.div>
           )}
 
-          {step === 2 && (
+          {/* Step 3 — Pickup */}
+          {step === 3 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="glass-card rounded-2xl p-6 md:p-8">
               <div className="mb-6">
                 <h2 className="font-display text-xl text-cream mb-1">{t.booking.pickupPoint}</h2>
@@ -260,9 +286,11 @@ function BookingPageInner() {
             </motion.div>
           )}
 
-          {step === 3 && (
-            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="glass-card rounded-2xl p-6 md:p-8">
-              <h2 className="font-display text-xl text-cream mb-6">{t.booking.step3}</h2>
+          {/* Step 4 — Details */}
+          {step === 4 && (
+            <motion.div key="step4d" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="glass-card rounded-2xl p-6 md:p-8">
+              <h2 className="font-display text-xl text-cream mb-2">Your details</h2>
+              <p className="text-sm text-cream-muted mb-6">We&apos;ll send your confirmation to these contacts.</p>
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-cream-muted uppercase tracking-wider block mb-2">{t.booking.fullName} *</label>
@@ -294,8 +322,9 @@ function BookingPageInner() {
             </motion.div>
           )}
 
-          {step === 4 && (
-            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+          {/* Step 5 — Review + Payment */}
+          {step === 5 && (
+            <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
               {/* Order summary */}
               <div className="glass-card rounded-2xl p-6">
                 <h2 className="font-display text-xl text-cream mb-5">{t.booking.orderSummary}</h2>
@@ -362,10 +391,10 @@ function BookingPageInner() {
             </button>
           )}
           <button
-            onClick={step === 4 ? handleSubmit : handleNext}
+            onClick={step === TOTAL_STEPS ? handleSubmit : handleNext}
             className="btn-primary flex-1 justify-center"
           >
-            {step === 4 ? t.booking.confirmPay : t.booking.continue}
+            {step === TOTAL_STEPS ? t.booking.confirmPay : t.booking.continue}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
