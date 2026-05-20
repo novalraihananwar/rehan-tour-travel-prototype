@@ -60,6 +60,44 @@ create table if not exists driver_locations (
   recorded_at  timestamptz default now()
 );
 
+-- 4. TOUR PACKAGES (admin editable — overrides hardcoded data)
+create table if not exists tour_packages (
+  id              text primary key,
+  slug            text unique not null,
+  title           text not null,
+  subtitle        text,
+  cover_image     text,
+  type            text default 'shared',
+  duration        text,
+  duration_days   int default 1,
+  max_group_size  int default 13,
+  price_usd       numeric(10,2),
+  price_idr       numeric(15,2),
+  original_price_usd numeric(10,2),
+  rating          numeric(3,1) default 4.9,
+  review_count    int default 0,
+  available_seats int default 13,
+  total_seats     int default 13,
+  next_departure  date,
+  route_description text,
+  tags            jsonb default '[]',
+  highlights      jsonb default '[]',
+  included        jsonb default '[]',
+  excluded        jsonb default '[]',
+  itinerary       jsonb default '[]',
+  is_active       boolean default true,
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now()
+);
+
+alter table tour_packages enable row level security;
+create policy "Public can read active packages"
+  on tour_packages for select to anon
+  using (is_active = true);
+create policy "Service role full access packages"
+  on tour_packages for all to service_role using (true);
+
+
 -- Index for fast lookup by booking code
 create index if not exists idx_driver_locations_code
   on driver_locations(booking_code, recorded_at desc);

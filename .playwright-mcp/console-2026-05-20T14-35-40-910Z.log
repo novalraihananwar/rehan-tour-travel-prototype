@@ -12,3 +12,14 @@
 [  261571ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/fleet?_rsc=ojqfq:0
 [  299701ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/privacy?_rsc=le8wj:0
 [  300611ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/terms?_rsc=le8wj:0
+[ 1856517ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://rehan-tour-travel-prototype.vercel.app/admin/login:0
+[ 2465355ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/drivers:0
+[ 2466192ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/about?_rsc=esl1u:0
+[ 2466194ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/fleet?_rsc=esl1u:0
+[ 2469424ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/driver:0
+[ 2469591ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/about?_rsc=1qx2x:0
+[ 2469597ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/fleet?_rsc=1qx2x:0
+[ 2473791ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/drivers:0
+[ 2473956ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/about?_rsc=esl1u:0
+[ 2473959ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/fleet?_rsc=esl1u:0
+[ 2869639ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://rehan-tour-travel-prototype.vercel.app/admin/login:0

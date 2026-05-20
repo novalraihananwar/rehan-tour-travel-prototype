@@ -109,10 +109,50 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   )
 }
 
+interface AdminStats {
+  totalBookings: number
+  confirmedCount: number
+  pendingCount: number
+  totalRevenue: number
+  todayBookings: number
+  todayRevenue: number
+  driversOnTrip: number
+  driversAvail: number
+  totalDrivers: number
+  recentBookings: Array<{
+    code?: string
+    name: string
+    package_title: string
+    date?: string
+    guests: number
+    total_usd: number
+    status: string
+    created_at: string
+  }>
+}
+
 export default function AdminOverview() {
   const [dateStr, setDateStr] = useState('')
+  const [stats, setStats] = useState<AdminStats | null>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
+
   useEffect(() => {
     setDateStr(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))
+  }, [])
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/admin/stats')
+        const data = await res.json()
+        setStats(data)
+      } catch { /* use mock data */ } finally {
+        setLoadingStats(false)
+      }
+    }
+    fetchStats()
+    const interval = setInterval(fetchStats, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -129,9 +169,34 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — real data */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpiCards.map((card, i) => (
+        {[
+          {
+            icon: DollarSign, label: 'Total Revenue',
+            value: stats ? `$${stats.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—',
+            sub: `Today: $${stats?.todayRevenue?.toFixed(0) || 0}`,
+            color: 'gold',
+          },
+          {
+            icon: Users, label: 'Total Bookings',
+            value: stats ? String(stats.totalBookings) : '—',
+            sub: `${stats?.confirmedCount || 0} confirmed · ${stats?.pendingCount || 0} pending`,
+            color: 'jungle',
+          },
+          {
+            icon: Truck, label: 'Active Drivers',
+            value: stats ? String(stats.driversOnTrip) : '—',
+            sub: `${stats?.driversAvail || 0} available · ${stats?.totalDrivers || 0} online`,
+            color: 'sunset',
+          },
+          {
+            icon: TrendingUp, label: "Today's Bookings",
+            value: stats ? String(stats.todayBookings) : '—',
+            sub: 'New bookings today',
+            color: 'ocean',
+          },
+        ].map((card, i) => (
           <motion.div
             key={card.label}
             initial={{ opacity: 0, y: 20 }}
@@ -145,7 +210,7 @@ export default function AdminOverview() {
               </div>
               <div className="flex items-center gap-1 text-xs text-jungle-light">
                 <ArrowUpRight className="w-3 h-3" />
-                {card.change}
+                Live
               </div>
             </div>
             <div className="font-display text-2xl font-bold text-cream">{card.value}</div>
@@ -269,15 +334,21 @@ export default function AdminOverview() {
                 </tr>
               </thead>
               <tbody>
-                {recentBookings.map((b) => (
-                  <tr key={b.code} className="border-b border-white/3 hover:bg-white/2 transition-colors">
-                    <td className="py-3 px-4 font-mono text-cream-muted">{b.code}</td>
+                {(stats?.recentBookings || recentBookings.map(b => ({
+                  code: b.code, name: b.name, package_title: b.package,
+                  date: b.date, guests: b.guests, total_usd: b.total,
+                  status: b.status, created_at: b.date || '',
+                }))).map((b, i) => (
+                  <tr key={b.code || i} className="border-b border-white/3 hover:bg-white/2 transition-colors">
+                    <td className="py-3 px-4 font-mono text-cream-muted text-xs">{b.code || '—'}</td>
                     <td className="py-3 px-4">
-                      <span className="text-cream font-medium">{b.country} {b.name}</span>
+                      <span className="text-cream font-medium">{b.name}</span>
                     </td>
-                    <td className="py-3 px-4 text-cream-muted max-w-[140px] truncate">{b.package}</td>
-                    <td className="py-3 px-4 text-cream-muted">{b.date}</td>
-                    <td className="py-3 px-4 text-gold font-medium">${b.total}</td>
+                    <td className="py-3 px-4 text-cream-muted max-w-[140px] truncate">{b.package_title}</td>
+                    <td className="py-3 px-4 text-cream-muted">
+                      {b.created_at ? new Date(b.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—'}
+                    </td>
+                    <td className="py-3 px-4 text-gold font-medium">${b.total_usd}</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-0.5 rounded-full text-xs border font-medium ${statusBadge(b.status)}`}>
                         {b.status}
@@ -285,6 +356,13 @@ export default function AdminOverview() {
                     </td>
                   </tr>
                 ))}
+                {stats && stats.recentBookings.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-cream-muted text-xs">
+                      Belum ada booking. Booking dari form akan muncul di sini.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

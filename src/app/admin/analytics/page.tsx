@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import { motion } from 'framer-motion'
-import { TrendingUp, Users, DollarSign, Globe, ArrowUpRight } from 'lucide-react'
+import { TrendingUp, Users, DollarSign, Globe, ArrowUpRight, Sheet, Download, Copy, Check } from 'lucide-react'
 
 const monthlyData = [
   { month: 'Jan', revenue: 12400, bookings: 34, passengers: 187, avgValue: 365 },
@@ -66,8 +66,60 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   )
 }
 
+const CSV_ENDPOINTS = [
+  { name: 'Ringkasan', sheet: 'ringkasan', desc: 'Total booking, revenue, driver online' },
+  { name: 'Penjualan', sheet: 'penjualan', desc: 'Semua booking + detail per baris' },
+  { name: 'Rekap Paket', sheet: 'rekap-paket', desc: 'Performa tiap paket wisata' },
+  { name: 'Driver Aktif', sheet: 'driver-aktif', desc: 'Posisi & status driver saat ini' },
+]
+
+const APPS_SCRIPT = `var API_BASE = 'https://rehan-tour-travel-prototype.vercel.app/api/sheets-csv';
+var SHEETS = [
+  ['Ringkasan', '/ringkasan'],
+  ['Penjualan', '/penjualan'],
+  ['Rekap Paket', '/rekap-paket'],
+  ['Driver Aktif', '/driver-aktif'],
+];
+
+function syncFromAPI() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  for (var i = 0; i < SHEETS.length; i++) {
+    var name = SHEETS[i][0];
+    var url = API_BASE + SHEETS[i][1];
+    try {
+      var resp = UrlFetchApp.fetch(url);
+      var data = Utilities.parseCsv(resp.getContentText());
+      if (!data || data.length === 0) continue;
+      var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
+      sheet.clearContents();
+      sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+      var hdr = sheet.getRange(1, 1, 1, data[0].length);
+      hdr.setFontWeight('bold');
+      hdr.setBackground('#1C1815');
+      hdr.setFontColor('#F0E6D6');
+      sheet.setFrozenRows(1);
+      for (var c = 1; c <= data[0].length; c++) sheet.autoResizeColumn(c);
+    } catch(e) { Logger.log('Error ' + name + ': ' + e.message); }
+  }
+  var log = ss.getSheetByName('_Log') || ss.insertSheet('_Log');
+  log.getRange('A1').setValue('Last sync: ' + new Date().toLocaleString('id-ID'));
+}
+
+function setupTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) ScriptApp.deleteTrigger(triggers[i]);
+  ScriptApp.newTrigger('syncFromAPI').timeBased().everyMinutes(5).create();
+}`
+
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState('6M')
+  const [copied, setCopied] = useState(false)
+
+  const copyScript = () => {
+    navigator.clipboard.writeText(APPS_SCRIPT)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div className="space-y-6">
@@ -218,6 +270,68 @@ export default function AnalyticsPage() {
               <span className="text-xs text-cream-muted w-16 text-right">{n.bookings} ({n.percentage}%)</span>
             </div>
           ))}
+        </div>
+      </motion.div>
+
+      {/* Google Sheets Sync */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="glass-card rounded-2xl p-6"
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-7 h-7 rounded-lg bg-jungle/20 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-jungle-light" />
+          </div>
+          <h3 className="text-sm font-medium text-cream">Google Sheets Auto-Sync</h3>
+        </div>
+        <p className="text-xs text-cream-muted mb-5">
+          Data booking, paket, dan driver bisa disync otomatis ke Google Sheets tiap 5 menit.
+        </p>
+
+        {/* CSV endpoints */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {CSV_ENDPOINTS.map(ep => (
+            <div key={ep.sheet} className="glass-card rounded-xl p-3 flex items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium text-cream">{ep.name}</p>
+                <p className="text-xs text-cream-muted">{ep.desc}</p>
+              </div>
+              <a
+                href={`/api/sheets-csv/${ep.sheet}`}
+                target="_blank"
+                className="shrink-0 p-1.5 rounded-lg bg-sunset/10 text-sunset hover:bg-sunset/20 transition-colors"
+                title="Download CSV"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          ))}
+        </div>
+
+        {/* Apps Script */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-cream">Google Apps Script</p>
+            <button
+              onClick={copyScript}
+              className="flex items-center gap-1.5 text-xs text-cream-muted hover:text-cream transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/5"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-jungle-light" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Tersalin!' : 'Copy script'}
+            </button>
+          </div>
+          <pre className="bg-volcanic-300 rounded-xl p-4 text-xs text-cream-muted overflow-x-auto max-h-48 font-mono leading-relaxed">
+            {APPS_SCRIPT}
+          </pre>
+          <div className="mt-3 space-y-1 text-xs text-cream-muted">
+            <p><span className="text-cream font-medium">Setup:</span></p>
+            <p>1. Buka Google Sheets baru → Extensions → Apps Script</p>
+            <p>2. Paste script di atas, klik Save</p>
+            <p>3. Jalankan fungsi <code className="text-sunset">setupTrigger</code> sekali</p>
+            <p>4. Data akan sync otomatis tiap 5 menit</p>
+          </div>
         </div>
       </motion.div>
     </div>

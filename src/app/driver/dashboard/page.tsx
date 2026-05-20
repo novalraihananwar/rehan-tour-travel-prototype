@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Navigation, LogOut, Truck, ArrowRight, Search } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle } from 'lucide-react'
 
 interface DriverSession {
   username: string
@@ -12,11 +12,15 @@ interface DriverSession {
   loginAt: number
 }
 
+type GpsStatus = 'checking' | 'required' | 'granted' | 'denied'
+
 export default function DriverDashboard() {
   const router = useRouter()
-  const [session, setSession] = useState<DriverSession | null>(null)
+  const [session, setSession]         = useState<DriverSession | null>(null)
   const [bookingCode, setBookingCode] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError]             = useState('')
+  const [gpsStatus, setGpsStatus]     = useState<GpsStatus>('checking')
+  const [gpsCoords, setGpsCoords]     = useState<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
     const raw = localStorage.getItem('driver_session')
@@ -32,7 +36,38 @@ export default function DriverDashboard() {
       return
     }
     setSession(data)
+
+    // Check GPS permission immediately after session loaded
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'granted') {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+              setGpsStatus('granted')
+            },
+            () => setGpsStatus('required')
+          )
+        } else {
+          setGpsStatus('required')
+        }
+      })
+    } else {
+      setGpsStatus('required')
+    }
   }, [router])
+
+  const requestGps = () => {
+    setGpsStatus('checking')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setGpsStatus('granted')
+      },
+      () => setGpsStatus('denied'),
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   const handleStartTrip = (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,6 +90,52 @@ export default function DriverDashboard() {
 
   if (!session) return null
 
+  // GPS gate — must grant before accessing dashboard
+  if (gpsStatus === 'checking') {
+    return (
+      <div className="min-h-screen bg-volcanic flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-sunset/30 border-t-sunset rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-cream-muted text-sm">Memeriksa izin lokasi...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (gpsStatus === 'required' || gpsStatus === 'denied') {
+    return (
+      <div className="min-h-screen bg-volcanic flex items-center justify-center px-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+          <div className="glass-card rounded-3xl p-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-sunset/15 border-2 border-sunset/30 flex items-center justify-center mx-auto mb-5">
+              <MapPin className="w-10 h-10 text-sunset" />
+            </div>
+            <h1 className="font-display text-2xl text-cream mb-2">Aktifkan Lokasi</h1>
+            <p className="text-cream-muted text-sm mb-6 leading-relaxed">
+              Sebagai driver, lokasi kamu harus aktif agar pelanggan bisa memantau posisimu secara live. Izin lokasi <strong className="text-cream">wajib</strong> sebelum mulai bertugas.
+            </p>
+
+            {gpsStatus === 'denied' && (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-lava/15 border border-lava/25 text-xs text-red-300 mb-4 text-left">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                Izin ditolak. Buka Pengaturan browser → izinkan akses lokasi untuk situs ini, lalu coba lagi.
+              </div>
+            )}
+
+            <button onClick={requestGps} className="btn-primary w-full justify-center py-4 text-base mb-3">
+              <Navigation className="w-5 h-5" />
+              Aktifkan Lokasi Sekarang
+            </button>
+
+            <button onClick={handleLogout} className="w-full text-sm text-cream-muted hover:text-cream transition-colors py-2">
+              Keluar
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-volcanic">
       {/* Header */}
@@ -71,13 +152,21 @@ export default function DriverDashboard() {
               <p className="text-xs text-cream-muted">{session.vehicle}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-cream-muted hover:text-cream transition-colors px-3 py-2 rounded-full hover:bg-white/5"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Keluar
-          </button>
+          <div className="flex items-center gap-2">
+            {gpsCoords && (
+              <span className="flex items-center gap-1 text-xs text-jungle-light bg-jungle/15 px-2.5 py-1 rounded-full">
+                <CheckCircle className="w-3 h-3" />
+                GPS Aktif
+              </span>
+            )}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-xs text-cream-muted hover:text-cream transition-colors px-3 py-2 rounded-full hover:bg-white/5"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Keluar
+            </button>
+          </div>
         </div>
       </div>
 

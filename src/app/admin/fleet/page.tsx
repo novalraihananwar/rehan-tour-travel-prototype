@@ -1,52 +1,120 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Truck, Phone, Edit3, Plus, CheckCircle, AlertCircle, Clock, Wrench, MapPin } from 'lucide-react'
+import {
+  Truck, MapPin, Phone, CheckCircle, AlertCircle,
+  Clock, Wrench, Navigation, Users, RefreshCw,
+} from 'lucide-react'
 import { fleetVehicles } from '@/lib/data'
+import { getPusherClient } from '@/lib/pusher-client'
 
-const statusConfig: Record<string, { label: string; dot: string; text: string; bg: string; border: string }> = {
-  Available: { label: 'Available', dot: 'bg-jungle-light', text: 'text-jungle-light', bg: 'bg-jungle/15', border: 'border-jungle/25' },
-  Standby: { label: 'Standby', dot: 'bg-gold', text: 'text-gold', bg: 'bg-gold/15', border: 'border-gold/25' },
-  'Fully Booked': { label: 'Fully Booked', dot: 'bg-lava', text: 'text-lava', bg: 'bg-lava/15', border: 'border-lava/25' },
-  'On Trip': { label: 'On Trip', dot: 'bg-sunset', text: 'text-sunset', bg: 'bg-sunset/15', border: 'border-sunset/25' },
-  Maintenance: { label: 'Maintenance', dot: 'bg-cream-muted', text: 'text-cream-muted', bg: 'bg-white/8', border: 'border-white/12' },
+const AdminDriverMap = dynamic(() => import('@/components/ui/admin-driver-map'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gray-100 rounded-2xl flex items-center justify-center">
+      <span className="text-gray-400 text-sm">Memuat peta...</span>
+    </div>
+  ),
+})
+
+interface LiveDriver {
+  driverName: string
+  vehicle: string
+  lat: number
+  lng: number
+  status: string
+  bookingCode: string | null
+  customerName: string | null
+  pickupName: string | null
+  pickupLat: number | null
+  pickupLng: number | null
+  updatedAt: number
 }
 
-// Extend fleet with 30 simulated vehicles
+const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; bg: string; border: string }> = {
+  Available:    { label: 'Available',    dot: 'bg-jungle-light', text: 'text-jungle-light', bg: 'bg-jungle/15',  border: 'border-jungle/25' },
+  Standby:      { label: 'Standby',      dot: 'bg-gold',         text: 'text-gold',         bg: 'bg-gold/15',    border: 'border-gold/25' },
+  'Fully Booked':{ label: 'Full',        dot: 'bg-lava',         text: 'text-lava',         bg: 'bg-lava/15',    border: 'border-lava/25' },
+  'On Trip':    { label: 'On Trip',      dot: 'bg-sunset',       text: 'text-sunset',       bg: 'bg-sunset/15',  border: 'border-sunset/25' },
+  Maintenance:  { label: 'Maintenance',  dot: 'bg-cream-muted',  text: 'text-cream-muted',  bg: 'bg-white/8',    border: 'border-white/12' },
+  available:    { label: 'Available',    dot: 'bg-jungle-light', text: 'text-jungle-light', bg: 'bg-jungle/15',  border: 'border-jungle/25' },
+  'en-route':   { label: 'En Route',     dot: 'bg-sunset',       text: 'text-sunset',       bg: 'bg-sunset/15',  border: 'border-sunset/25' },
+  'on-trip':    { label: 'On Trip',      dot: 'bg-lava',         text: 'text-lava',         bg: 'bg-lava/15',    border: 'border-lava/25' },
+  arrived:      { label: 'Di Lokasi',    dot: 'bg-purple-400',   text: 'text-purple-300',   bg: 'bg-purple-900/20', border: 'border-purple-500/30' },
+  offline:      { label: 'Offline',      dot: 'bg-cream-muted',  text: 'text-cream-muted',  bg: 'bg-white/8',    border: 'border-white/12' },
+}
+
 const extendedFleet = [
   ...fleetVehicles,
   ...Array.from({ length: 22 }, (_, i) => ({
     id: `RTT-${String(i + 9).padStart(3, '0')}`,
     plateNumber: i < 11 ? `L ${8009 + i} RTT` : `DK ${8001 + (i - 11)} RTT`,
-    model: i % 3 === 0 ? 'Toyota HiAce Premio 2022' : i % 3 === 1 ? 'Toyota HiAce Commuter 2023' : 'Toyota HiAce Commuter 2022',
+    model: i % 3 === 0 ? 'Toyota HiAce Premio 2022' : 'Toyota HiAce Commuter 2023',
     capacity: i % 3 === 0 ? 11 : 13,
     driver: ['Andi Wijaya', 'Slamet Riyadi', 'Bagas Prabowo', 'Fajar Nugroho', 'Hendri Saputra', 'Irfan Maulana', 'Joko Santoso', 'Kukuh Prasetyo', 'Lukman Hakim', 'Mulyadi Susanto', 'Niko Firmansyah', 'Otto Kurniawan', 'Putu Agus', 'Raka Sanjaya', 'Satria Kusuma', 'Tomi Wibowo', 'Umar Basri', 'Vino Ramadhan', 'Widi Santoso', 'Xander Pratama', 'Yogi Haryanto', 'Zaki Firdaus'][i],
     driverPhone: `+62812-${String(4567890 + i).substring(0, 7)}`,
     status: (['Available', 'Available', 'On Trip', 'Standby', 'Available', 'Fully Booked', 'Available', 'On Trip', 'Available', 'Available', 'Standby', 'Available', 'On Trip', 'Available', 'Available', 'Fully Booked', 'Available', 'On Trip', 'Available', 'Maintenance', 'Available', 'Standby'] as const)[i],
-    currentRoute: i % 3 === 2 ? ['Malang → Bromo', 'Bali Circuit', 'Surabaya → Ijen', 'Bromo → Banyuwangi', 'Ubud → Kintamani', 'Seminyak → Nusa Penida'][i % 6] : undefined,
-    nextTrip: '2026-05-25',
     occupancy: i % 3 === 2 ? ((i * 7 + 3) % 8) + 4 : 0,
     totalTrips: ((i * 31 + 47) % 300) + 50,
-    image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&q=80',
-  })),
+    currentRoute: i % 3 === 2 ? ['Malang → Bromo', 'Bali Circuit', 'Surabaya → Ijen'][i % 3] : undefined,
+  }))
 ]
 
 export default function FleetPage() {
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [search, setSearch] = useState('')
-  const [view, setView] = useState<'grid' | 'table'>('table')
+  const [liveDrivers, setLiveDrivers]   = useState<LiveDriver[]>([])
+  const [filterStatus, setFilterStatus] = useState('All')
+  const [searchQ, setSearchQ]           = useState('')
+  const [view, setView]                 = useState<'map' | 'list'>('map')
+  const [lastRefresh, setLastRefresh]   = useState(new Date())
 
-  const statusCounts = extendedFleet.reduce((acc, v) => {
-    acc[v.status] = (acc[v.status] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+  // Fetch live drivers
+  const fetchLive = async () => {
+    try {
+      const res  = await fetch('/api/admin/drivers')
+      const data = await res.json()
+      setLiveDrivers(data)
+      setLastRefresh(new Date())
+    } catch {}
+  }
 
-  const filtered = extendedFleet.filter((v) => {
-    const matchStatus = statusFilter === 'All' || v.status === statusFilter
-    const matchSearch = !search || v.id.toLowerCase().includes(search.toLowerCase()) || v.driver.toLowerCase().includes(search.toLowerCase()) || v.plateNumber.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    fetchLive()
+    const interval = setInterval(fetchLive, 10000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Pusher real-time
+  useEffect(() => {
+    let client: ReturnType<typeof getPusherClient>
+    try { client = getPusherClient() } catch { return }
+    const ch = client.subscribe('admin-drivers')
+    ch.bind('driver-update', (data: LiveDriver) => {
+      setLiveDrivers(prev => {
+        const idx = prev.findIndex(d => d.driverName === data.driverName)
+        if (idx >= 0) { const n = [...prev]; n[idx] = data; return n }
+        return [...prev, data]
+      })
+    })
+    return () => { ch.unbind_all(); client.unsubscribe('admin-drivers') }
+  }, [])
+
+  const statuses = ['All', 'Available', 'On Trip', 'Standby', 'Maintenance', 'Fully Booked']
+
+  const filteredFleet = extendedFleet.filter(v => {
+    const matchStatus = filterStatus === 'All' || v.status === filterStatus
+    const matchSearch = !searchQ || v.driver.toLowerCase().includes(searchQ.toLowerCase()) || v.id.toLowerCase().includes(searchQ.toLowerCase())
     return matchStatus && matchSearch
   })
+
+  const counts = {
+    available: extendedFleet.filter(v => v.status === 'Available').length,
+    onTrip:    extendedFleet.filter(v => v.status === 'On Trip').length,
+    standby:   extendedFleet.filter(v => v.status === 'Standby').length,
+    maintenance: extendedFleet.filter(v => v.status === 'Maintenance').length,
+  }
 
   return (
     <div className="space-y-6">
@@ -54,158 +122,229 @@ export default function FleetPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-cream">Fleet & Drivers</h1>
-          <p className="text-sm text-cream-muted mt-0.5">30 Toyota HiAce vehicles — {statusCounts['On Trip'] || 0} currently on trip</p>
+          <p className="text-sm text-cream-muted mt-0.5">
+            {liveDrivers.length} driver live · {extendedFleet.length} kendaraan terdaftar
+          </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-volcanic bg-sunset-gradient hover:shadow-glow-sunset hover:-translate-y-0.5 transition-all">
-          <Plus className="w-4 h-4" /> Add Vehicle
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={fetchLive} className="btn-ghost text-xs px-3 py-2 flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" />
+            Refresh
+          </button>
+          <div className="flex rounded-xl overflow-hidden border border-white/10">
+            {(['map', 'list'] as const).map(v => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-4 py-2 text-xs font-medium capitalize transition-all ${view === v ? 'bg-sunset text-volcanic' : 'text-cream-muted hover:text-cream'}`}
+              >
+                {v === 'map' ? 'Peta Live' : 'Daftar'}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Status summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {Object.entries(statusConfig).map(([status, cfg]) => (
-          <motion.button
-            key={status}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={() => setStatusFilter(statusFilter === status ? 'All' : status)}
-            className={`glass-card rounded-2xl p-4 text-center transition-all duration-200 cursor-pointer ${statusFilter === status ? `border-current ${cfg.text}` : 'hover:border-white/12'}`}
-          >
-            <div className={`w-2.5 h-2.5 rounded-full ${cfg.dot} mx-auto mb-2`} />
-            <div className={`text-2xl font-bold font-display ${cfg.text}`}>{statusCounts[status] || 0}</div>
-            <div className="text-xs text-cream-muted mt-1">{cfg.label}</div>
-          </motion.button>
+      {/* Stats bar */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Tersedia', count: counts.available, color: 'text-jungle-light', icon: CheckCircle },
+          { label: 'On Trip',  count: counts.onTrip,   color: 'text-sunset',       icon: Navigation },
+          { label: 'Standby',  count: counts.standby,  color: 'text-gold',         icon: Clock },
+          { label: 'Service',  count: counts.maintenance, color: 'text-cream-muted', icon: Wrench },
+        ].map(s => (
+          <div key={s.label} className="glass-card rounded-2xl p-4 text-center">
+            <s.icon className={`w-4 h-4 mx-auto mb-1 ${s.color}`} />
+            <p className={`text-xl font-bold font-display ${s.color}`}>{s.count}</p>
+            <p className="text-xs text-cream-muted">{s.label}</p>
+          </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Truck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cream-muted" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search vehicle ID, driver name, plate..."
-            className="input-dark pl-9 text-sm py-2.5 w-full"
-          />
+      {view === 'map' ? (
+        /* MAP VIEW — live driver positions */
+        <div className="glass-card rounded-2xl overflow-hidden" style={{ height: '520px' }}>
+          <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-jungle-light animate-pulse" />
+              <span className="text-sm font-medium text-cream">Live Driver Map</span>
+              <span className="text-xs text-cream-muted">
+                · {lastRefresh.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            </div>
+            <span className="text-xs text-cream-muted">{liveDrivers.length} driver online</span>
+          </div>
+          <div style={{ height: 'calc(100% - 48px)' }}>
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <AdminDriverMap initialDrivers={liveDrivers} />
+          </div>
         </div>
-        <div className="flex border border-white/10 rounded-xl overflow-hidden">
-          <button onClick={() => setView('table')} className={`px-4 py-2.5 text-xs font-medium transition-colors ${view === 'table' ? 'bg-sunset/20 text-sunset' : 'text-cream-muted hover:text-cream'}`}>
-            Table
-          </button>
-          <button onClick={() => setView('grid')} className={`px-4 py-2.5 text-xs font-medium transition-colors ${view === 'grid' ? 'bg-sunset/20 text-sunset' : 'text-cream-muted hover:text-cream'}`}>
-            Cards
-          </button>
-        </div>
-      </div>
+      ) : (
+        /* LIST VIEW — all fleet vehicles */
+        <div className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <input
+              value={searchQ}
+              onChange={e => setSearchQ(e.target.value)}
+              placeholder="Cari driver atau ID kendaraan..."
+              className="input-dark text-sm py-2 w-56"
+            />
+            <div className="flex gap-1.5 flex-wrap">
+              {statuses.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                    filterStatus === s
+                      ? 'bg-gradient-to-r from-sunset to-gold text-volcanic border-transparent'
+                      : 'border-white/10 text-cream-muted hover:border-white/25'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Table view */}
-      {view === 'table' && (
-        <div className="glass-card rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-white/6">
-                  {['Vehicle ID', 'Plate', 'Model / Cap', 'Driver', 'Phone', 'Status', 'Current Route', 'Occupancy', 'Total Trips', ''].map((h) => (
-                    <th key={h} className="text-left py-3.5 px-4 text-cream-muted uppercase tracking-wider font-medium">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((v) => {
-                  const cfg = statusConfig[v.status]
-                  return (
-                    <tr key={v.id} className="border-b border-white/3 hover:bg-white/2 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-cream">{v.id}</td>
-                      <td className="py-3 px-4 font-mono text-cream-muted text-xs">{v.plateNumber}</td>
-                      <td className="py-3 px-4">
-                        <div className="text-cream">{v.model.replace('Toyota HiAce ', '').split(' ')[0]}</div>
-                        <div className="text-cream-muted">{v.capacity} pax</div>
-                      </td>
-                      <td className="py-3 px-4 text-cream">{v.driver}</td>
-                      <td className="py-3 px-4 text-cream-muted">{v.driverPhone}</td>
-                      <td className="py-3 px-4">
-                        <span className={`flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full border text-xs font-medium ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${v.status === 'On Trip' ? 'animate-pulse' : ''}`} />
-                          {v.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-cream-muted">{v.currentRoute || '—'}</td>
-                      <td className="py-3 px-4">
-                        {v.status === 'On Trip' ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 bg-volcanic-500 rounded-full h-1.5">
-                              <div className="h-1.5 rounded-full bg-gradient-to-r from-sunset to-gold" style={{ width: `${(v.occupancy / v.capacity) * 100}%` }} />
-                            </div>
-                            <span className="text-sunset">{v.occupancy}/{v.capacity}</span>
-                          </div>
-                        ) : <span className="text-cream-muted">—</span>}
-                      </td>
-                      <td className="py-3 px-4 text-sunset font-medium">{v.totalTrips}</td>
-                      <td className="py-3 px-4">
-                        <button className="p-1.5 rounded-lg hover:bg-white/8 text-cream-muted hover:text-cream transition-colors">
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <p className="text-xs text-cream-muted">{filteredFleet.length} kendaraan</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredFleet.map((v, i) => {
+              const cfg  = STATUS_CONFIG[v.status] || STATUS_CONFIG.offline
+              // Check if driver has live GPS
+              const live = liveDrivers.find(d => d.vehicle === v.id || d.driverName?.toLowerCase().includes(v.driver?.split(' ')[0]?.toLowerCase() || ''))
+              return (
+                <motion.div
+                  key={v.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="glass-card rounded-2xl overflow-hidden hover:border-sunset/20 transition-all"
+                >
+                  {/* Status header */}
+                  <div className={`px-4 py-2.5 flex items-center justify-between border-b border-white/5 ${cfg.bg}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${cfg.dot} ${v.status === 'On Trip' ? 'animate-pulse' : ''}`} />
+                      <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs text-cream-muted">{v.id}</span>
+                      {live && (
+                        <span className="text-xs text-jungle-light bg-jungle/20 px-1.5 py-0.5 rounded-full">GPS</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-9 h-9 rounded-xl bg-volcanic-400 flex items-center justify-center shrink-0">
+                        <Truck className="w-4 h-4 text-cream-muted" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-cream truncate">{v.driver}</p>
+                        <p className="text-xs text-cream-muted font-mono">{(v as { plateNumber: string }).plateNumber}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-cream-muted mb-3">
+                      <div className="flex justify-between">
+                        <span>Kapasitas</span>
+                        <span className="text-cream">{v.capacity} pax</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total trips</span>
+                        <span className="text-cream">{v.totalTrips}</span>
+                      </div>
+                      {(v as { currentRoute?: string }).currentRoute && (
+                        <div className="flex items-center gap-1 text-sunset">
+                          <Navigation className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{(v as { currentRoute?: string }).currentRoute}</span>
+                        </div>
+                      )}
+                      {live && (
+                        <div className="flex items-center gap-1 text-jungle-light">
+                          <MapPin className="w-3 h-3 shrink-0" />
+                          <span>Live: {live.lat.toFixed(3)}, {live.lng.toFixed(3)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      {(v as { driverPhone: string }).driverPhone && (
+                        <a
+                          href={`tel:${(v as { driverPhone: string }).driverPhone}`}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-jungle/25 bg-jungle/10 text-jungle-light text-xs hover:bg-jungle/20 transition-colors"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          Call
+                        </a>
+                      )}
+                      {live?.bookingCode && (
+                        <Link
+                          href={`/booking/${live.bookingCode}`}
+                          target="_blank"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-sunset/25 bg-sunset/10 text-sunset text-xs hover:bg-sunset/20 transition-colors"
+                        >
+                          <Navigation className="w-3.5 h-3.5" />
+                          Track
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       )}
 
-      {/* Grid view */}
-      {view === 'grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((v) => {
-            const cfg = statusConfig[v.status]
-            return (
-              <motion.div
-                key={v.id}
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="glass-card rounded-2xl overflow-hidden hover:border-sunset/20 transition-all duration-300"
-              >
-                <div className="relative h-32 bg-volcanic-400 flex items-center justify-center">
-                  <Truck className="w-14 h-14 text-volcanic-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-volcanic-300 to-transparent" />
-                  <div className="absolute top-2 right-2">
-                    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium backdrop-blur-sm ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                      {v.status}
-                    </span>
+      {/* Live drivers detail (shown below map) */}
+      {view === 'map' && liveDrivers.length > 0 && (
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/8">
+            <h3 className="text-sm font-medium text-cream flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-sunset" />
+              Driver Online Saat Ini
+            </h3>
+          </div>
+          <div className="divide-y divide-white/5">
+            {liveDrivers.map(d => {
+              const cfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.offline
+              return (
+                <div key={d.driverName} className="flex items-center gap-4 px-5 py-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sunset/80 to-gold/80 flex items-center justify-center text-volcanic font-bold text-sm shrink-0">
+                    {d.driverName[0]?.toUpperCase()}
                   </div>
-                  <div className="absolute bottom-2 left-2 font-mono text-xs text-cream-muted bg-volcanic/70 backdrop-blur-sm px-2 py-0.5 rounded">
-                    {v.id}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-cream">{d.driverName}</p>
+                    <p className="text-xs text-cream-muted font-mono">{d.vehicle} · {d.lat.toFixed(4)}, {d.lng.toFixed(4)}</p>
                   </div>
-                </div>
-                <div className="p-4 space-y-2 text-xs">
-                  <div className="font-mono text-cream-muted">{v.plateNumber}</div>
-                  <div className="text-sm font-medium text-cream">{v.driver}</div>
-                  <div className="text-cream-muted">{v.model.replace('Toyota HiAce ', '')}</div>
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                    <span className="text-cream-muted flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> {v.driverPhone}
-                    </span>
-                    <span className="text-sunset font-medium">{v.totalTrips} trips</span>
-                  </div>
-                  {v.currentRoute && (
-                    <div className="flex items-center gap-1 text-sunset text-xs">
-                      <MapPin className="w-3 h-3" /> {v.currentRoute}
-                    </div>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                    {cfg.label}
+                  </span>
+                  {d.bookingCode && (
+                    <Link href={`/booking/${d.bookingCode}`} target="_blank" className="text-xs text-sunset hover:text-gold transition-colors">
+                      {d.bookingCode}
+                    </Link>
                   )}
+                  <span className="text-xs text-cream-muted">
+                    {new Date(d.updatedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
                 </div>
-              </motion.div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       )}
 
-      <p className="text-xs text-cream-muted text-center">
-        Showing {filtered.length} of {extendedFleet.length} vehicles
-      </p>
+      {view === 'map' && liveDrivers.length === 0 && (
+        <div className="glass-card rounded-2xl p-8 text-center">
+          <Truck className="w-8 h-8 text-cream-muted mx-auto mb-2" />
+          <p className="text-cream-muted text-sm">Belum ada driver yang online.</p>
+          <p className="text-xs text-cream-muted mt-1">Driver akan muncul di peta saat mereka login dan GPS aktif.</p>
+        </div>
+      )}
     </div>
   )
 }

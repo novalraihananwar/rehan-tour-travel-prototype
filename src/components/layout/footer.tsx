@@ -20,9 +20,9 @@ const footerLinks = {
   ],
   Company: [
     { label: 'About Us', href: '/about' },
-    { label: 'Our Fleet', href: '/fleet' },
     { label: 'Blog', href: '/blog' },
     { label: 'Admin Dashboard', href: '/admin' },
+    { label: 'Driver Portal', href: '/driver/login' },
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Terms of Service', href: '/terms' },
   ],
