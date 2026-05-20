@@ -1,0 +1,11 @@
+[  889174ms] [ERROR] Failed to fetch RSC payload for https://rehan-tour-travel-prototype.vercel.app/. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:45508)
+    at https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:59057
+    at Object.u [as task] (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:31883)
+    at c.s (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:32588)
+    at c.enqueue (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:32013)
+    at s (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:59020)
+    at i (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:58560)
+    at a (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:65384)
+    at https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:1:75279
+    at Object.action (https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:2:7102) @ https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/7023-8a6b6d000e646c1b.js:0

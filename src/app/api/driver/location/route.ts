@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
 
     const data = { lat, lng, status: status || 'en-route', timestamp: Date.now(), driverName, vehicle }
 
-    // Save to Supabase
+    // Save to Supabase (includes vehicle so admin map can show it)
     try {
       await supabase.from('driver_locations').insert({
         booking_code: bookingCode,
-        driver_id: driverId || null,
+        driver_id:   driverId || null,
         driver_name: driverName || null,
+        vehicle:     vehicle || null,
         lat, lng,
         status: status || 'en-route',
       })
