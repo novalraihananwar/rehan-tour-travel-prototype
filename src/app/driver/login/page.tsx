@@ -5,15 +5,6 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Lock, User, Eye, EyeOff, AlertCircle, Navigation } from 'lucide-react'
 
-// Driver credentials — replace with real DB query when backend is ready
-// PIN is set per-driver. Default PIN: RTT2026
-const DRIVER_ACCOUNTS: Record<string, { pin: string; name: string; vehicle: string }> = {
-  'budi.santoso': { pin: 'RTT2026', name: 'Budi Santoso', vehicle: 'RTT-001' },
-  'andi.wijaya':  { pin: 'RTT2026', name: 'Andi Wijaya',  vehicle: 'RTT-002' },
-  'rudi.hartono': { pin: 'RTT2026', name: 'Rudi Hartono', vehicle: 'RTT-003' },
-  'demo':         { pin: '1234',    name: 'Driver Demo',  vehicle: 'RTT-DEMO' },
-}
-
 export default function DriverLoginPage() {
   const router = useRouter()
   const [username, setUsername] = useState('')
@@ -27,25 +18,30 @@ export default function DriverLoginPage() {
     setError('')
     setLoading(true)
 
-    await new Promise(r => setTimeout(r, 600)) // simulate auth check
+    try {
+      const res = await fetch('/api/driver/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, pin }),
+      })
+      const data = await res.json()
 
-    const account = DRIVER_ACCOUNTS[username.toLowerCase().trim()]
+      if (!res.ok) {
+        setError(data.error || 'Login gagal.')
+        setLoading(false)
+        return
+      }
 
-    if (!account || account.pin !== pin) {
-      setError('Username atau PIN salah.')
+      localStorage.setItem('driver_session', JSON.stringify({
+        ...data.driver,
+        loginAt: Date.now(),
+      }))
+
+      router.push('/driver/dashboard')
+    } catch {
+      setError('Koneksi gagal. Coba lagi.')
       setLoading(false)
-      return
     }
-
-    // Save driver session to localStorage
-    localStorage.setItem('driver_session', JSON.stringify({
-      username: username.toLowerCase().trim(),
-      name: account.name,
-      vehicle: account.vehicle,
-      loginAt: Date.now(),
-    }))
-
-    router.push('/driver/dashboard')
   }
 
   return (

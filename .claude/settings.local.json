@@ -27,7 +27,10 @@
       "Bash(npx uipro *)",
       "WebFetch(domain:ui-ux-pro-max-skill.nextlevelbuilder.io)",
       "Bash(node -e \"require\\('pusher'\\); console.log\\('pusher ok'\\)\")",
-      "Bash(node -e \"require\\('pusher-js'\\); console.log\\('pusher-js ok'\\)\")"
+      "Bash(node -e \"require\\('pusher-js'\\); console.log\\('pusher-js ok'\\)\")",
+      "Bash(vercel --version)",
+      "Bash(vercel integration *)",
+      "Bash(vercel env *)"
     ]
   }
 }

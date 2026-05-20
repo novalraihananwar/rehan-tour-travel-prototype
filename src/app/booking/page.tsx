@@ -76,7 +76,36 @@ function BookingPageInner() {
 
   const handleNext = () => step < TOTAL_STEPS && setStep(step + 1)
   const handleBack = () => step > 1 && setStep(step - 1)
-  const handleSubmit = () => setSubmitted(true)
+
+  const handleSubmit = async () => {
+    // Save booking to Supabase
+    try {
+      await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code:          bookingCode,
+          packageId:     formData.packageId,
+          packageTitle:  selectedPkg?.title || '',
+          date:          formData.date,
+          guests:        formData.guests,
+          pickupName:    formData.pickupName,
+          pickupAddress: formData.pickupAddress,
+          pickupFeeUsd:  pickupFeeUSD,
+          pickupIsCustom: formData.pickupIsCustom,
+          name:          formData.name,
+          email:         formData.email,
+          whatsapp:      formData.whatsapp,
+          specialRequest: formData.specialRequest,
+          paymentMethod: formData.paymentMethod,
+          totalUsd:      totalPriceUSD + pickupFeeUSD,
+        }),
+      })
+    } catch {
+      // Continue even if DB save fails — show confirmation screen
+    }
+    setSubmitted(true)
+  }
 
   if (submitted) {
     const waMessage = encodeURIComponent(
