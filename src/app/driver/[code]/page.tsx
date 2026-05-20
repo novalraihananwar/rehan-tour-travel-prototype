@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Navigation, Wifi, WifiOff, CheckCircle, MapPin, Phone, AlertCircle } from 'lucide-react'
 
@@ -15,7 +15,16 @@ const STATUSES = [
 
 export default function DriverPage() {
   const { code } = useParams<{ code: string }>()
+  const router = useRouter()
   const [status, setStatus]           = useState('standby')
+
+  // Auth guard — redirect to login if no session
+  useEffect(() => {
+    const raw = localStorage.getItem('driver_session')
+    if (!raw) {
+      router.replace(`/driver/login`)
+    }
+  }, [router])
   const [tracking, setTracking]       = useState(false)
   const [connected, setConnected]     = useState(false)
   const [lastSent, setLastSent]       = useState<Date | null>(null)
