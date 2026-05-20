@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle } from 'lucide-react'
@@ -61,13 +61,56 @@ export default function DriverDashboard() {
     setGpsStatus('checking')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setGpsCoords(coords)
         setGpsStatus('granted')
+        // Start broadcasting immediately as "standby" so admin can see driver
+        startStandbyBroadcast(coords)
       },
       () => setGpsStatus('denied'),
       { enableHighAccuracy: true, timeout: 10000 }
     )
   }
+
+  const standbyIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const startStandbyBroadcast = (initialCoords: { lat: number; lng: number }) => {
+    if (standbyIntervalRef.current) clearInterval(standbyIntervalRef.current)
+
+    const broadcast = (coords: { lat: number; lng: number }) => {
+      if (!session) return
+      fetch('/api/driver/location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingCode: 'STANDBY',
+          lat: coords.lat,
+          lng: coords.lng,
+          status: 'available',
+          driverName: session.name,
+          vehicle: session.vehicle,
+        }),
+      }).catch(() => {})
+    }
+
+    broadcast(initialCoords)
+
+    standbyIntervalRef.current = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          setGpsCoords(c)
+          broadcast(c)
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 8000 }
+      )
+    }, 15000)
+  }
+
+  useEffect(() => {
+    return () => { if (standbyIntervalRef.current) clearInterval(standbyIntervalRef.current) }
+  }, [])
 
   const handleStartTrip = (e: React.FormEvent) => {
     e.preventDefault()
