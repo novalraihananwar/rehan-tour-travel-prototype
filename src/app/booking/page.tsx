@@ -5,11 +5,21 @@ import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Check, ArrowRight, ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar } from 'lucide-react'
-import { tourPackages, pickupPoints } from '@/lib/data'
+import dynamic from 'next/dynamic'
+import { Check, ArrowRight, ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Navigation } from 'lucide-react'
+import { tourPackages } from '@/lib/data'
 import { BookingCalendar } from '@/components/ui/calendar'
 import { generateBookingCode } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
+
+const PickupMap = dynamic(() => import('@/components/ui/pickup-map').then(m => m.PickupMap), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[380px] rounded-2xl bg-volcanic-200 border border-white/8 flex items-center justify-center">
+      <span className="text-cream-muted text-sm">Loading map...</span>
+    </div>
+  ),
+})
 
 function BookingPageInner() {
   const params = useSearchParams()
@@ -21,6 +31,10 @@ function BookingPageInner() {
     date: params.get('date') || '',
     guests: parseInt(params.get('guests') || '2'),
     pickupId: '',
+    pickupName: '',
+    pickupAddress: '',
+    pickupFee: 0,
+    pickupIsCustom: false,
     name: '',
     email: '',
     whatsapp: '',
@@ -31,10 +45,8 @@ function BookingPageInner() {
   const [bookingCode] = useState(generateBookingCode())
 
   const selectedPkg = tourPackages.find((p) => p.slug === formData.packageId)
-  const selectedPickup = pickupPoints.find((p) => p.id === formData.pickupId)
-
   const totalPriceUSD = selectedPkg ? selectedPkg.price.usd * formData.guests : 0
-  const pickupFeeUSD = selectedPickup ? selectedPickup.additionalFee / 15000 : 0
+  const pickupFeeUSD = formData.pickupFee / 15000
 
   const steps = [
     { id: 1, label: t.booking.step1, icon: Calendar },
@@ -217,38 +229,34 @@ function BookingPageInner() {
 
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="glass-card rounded-2xl p-6 md:p-8">
-              <h2 className="font-display text-xl text-cream mb-6">{t.booking.pickupPoint}</h2>
+              <div className="mb-6">
+                <h2 className="font-display text-xl text-cream mb-1">{t.booking.pickupPoint}</h2>
+                <p className="text-sm text-cream-muted">
+                  Choose a preset pickup point or drop a pin anywhere across East Java and Bali.
+                </p>
+              </div>
 
-              {(['surabaya', 'malang', 'banyuwangi', 'bali'] as const).map((region) => {
-                const regionPoints = pickupPoints.filter((p) => p.region === region)
-                const regionLabels: Record<string, string> = { surabaya: '🏙️ Surabaya', malang: '🏔️ Malang', banyuwangi: '⛴️ Banyuwangi', bali: '🏝️ Bali' }
-                return (
-                  <div key={region} className="mb-6">
-                    <p className="text-xs text-cream-muted uppercase tracking-widest mb-3">{regionLabels[region]}</p>
-                    <div className="space-y-2">
-                      {regionPoints.map((point) => (
-                        <div
-                          key={point.id}
-                          onClick={() => setFormData({ ...formData, pickupId: point.id })}
-                          className={`flex items-center gap-4 p-3.5 rounded-xl cursor-pointer border transition-all ${formData.pickupId === point.id ? 'border-sunset/50 bg-sunset/8' : 'border-white/8 hover:border-white/15'}`}
-                        >
-                          <MapPin className="w-4 h-4 text-cream-muted shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-sm text-cream font-medium">{point.name}</p>
-                            <p className="text-xs text-cream-muted">{point.landmark}</p>
-                          </div>
-                          {point.additionalFee > 0 && (
-                            <span className="text-xs text-gold">+{formatPriceCompact(point.additionalFee / 15000)}</span>
-                          )}
-                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${formData.pickupId === point.id ? 'border-sunset bg-sunset' : 'border-white/25'}`}>
-                            {formData.pickupId === point.id && <div className="w-1.5 h-1.5 rounded-full bg-volcanic" />}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
+              <PickupMap
+                selectedId={formData.pickupId}
+                onSelect={(location) => {
+                  setFormData({
+                    ...formData,
+                    pickupId: location.id,
+                    pickupName: location.name,
+                    pickupAddress: location.address,
+                    pickupFee: location.additionalFee,
+                    pickupIsCustom: location.isCustom || false,
+                  })
+                }}
+              />
+
+              {formData.pickupIsCustom && (
+                <div className="mt-4 p-3 rounded-xl border border-gold/25 bg-gold/5">
+                  <p className="text-xs text-gold">
+                    Custom pin selected. Our driver will confirm the exact meeting point via WhatsApp before departure.
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -308,10 +316,15 @@ function BookingPageInner() {
                     <span>{formatPrice(selectedPkg?.price.usd ?? 0)} × {formData.guests} {t.booking.travelers_label}</span>
                     <span className="text-cream">{formatPrice(totalPriceUSD)}</span>
                   </div>
-                  {pickupFeeUSD > 0 && (
+                  {formData.pickupName && (
                     <div className="flex justify-between text-cream-muted">
-                      <span>{selectedPickup?.name}</span>
-                      <span className="text-cream">+{formatPrice(pickupFeeUSD)}</span>
+                      <span className="flex items-center gap-1.5">
+                        <Navigation className="w-3 h-3" />
+                        {formData.pickupName}
+                      </span>
+                      <span className="text-cream">
+                        {pickupFeeUSD > 0 ? `+${formatPrice(pickupFeeUSD)}` : 'Included'}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between font-medium pt-3 border-t border-white/8 text-base">
