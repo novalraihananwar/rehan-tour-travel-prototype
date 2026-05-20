@@ -4,11 +4,11 @@ import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { MapPin, Clock, TrendingUp, ArrowRight } from 'lucide-react'
+import { Clock, TrendingUp, ArrowRight } from 'lucide-react'
 import { destinations } from '@/lib/data'
+import { useLanguage } from '@/lib/i18n'
 
-const tabs = ['All', 'East Java', 'Bali'] as const
-type Tab = typeof tabs[number]
+type Tab = 'All' | string
 
 const difficultyColor: Record<string, string> = {
   Easy: 'bg-jungle/15 text-jungle-light border-jungle/25',
@@ -17,13 +17,16 @@ const difficultyColor: Record<string, string> = {
 }
 
 export function DestinationsGrid() {
+  const { t, formatPrice } = useLanguage()
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-100px' })
   const [activeTab, setActiveTab] = useState<Tab>('All')
 
+  const tabs = ['All', t.nav.eastJava, t.nav.bali]
+
   const filtered = destinations.filter((d) => {
-    if (activeTab === 'East Java') return d.region === 'east-java'
-    if (activeTab === 'Bali') return d.region === 'bali'
+    if (activeTab === t.nav.eastJava) return d.region === 'east-java'
+    if (activeTab === t.nav.bali) return d.region === 'bali'
     return true
   }).slice(0, 6)
 
@@ -37,7 +40,7 @@ export function DestinationsGrid() {
           transition={{ duration: 0.7 }}
           className="section-header"
         >
-          <p className="section-eyebrow">Explore Destinations</p>
+          <p className="section-eyebrow">{t.sections.destinations}</p>
           <h2 className="section-title">
             East Java & Bali —<br />
             <span className="text-gradient-sunset">28 Destinations, One Trip</span>
@@ -97,7 +100,7 @@ export function DestinationsGrid() {
                         ? 'bg-jungle/20 text-jungle-light border-jungle/30'
                         : 'bg-ocean/20 text-ocean-light border-ocean/30'
                     }`}>
-                      {dest.region === 'east-java' ? '🌋 East Java' : '🏝️ Bali'}
+                      {dest.region === 'east-java' ? t.nav.eastJava : t.nav.bali}
                     </span>
                   </div>
 
@@ -134,7 +137,7 @@ export function DestinationsGrid() {
                     </div>
 
                     <div className="flex items-center gap-1 text-sm text-sunset font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      Explore <ArrowRight className="w-4 h-4" />
+                      {t.general.learnMore} <ArrowRight className="w-4 h-4" />
                     </div>
                   </div>
 
@@ -142,7 +145,7 @@ export function DestinationsGrid() {
                   <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
                     <span className="text-xs text-cream-muted">Est. budget / person</span>
                     <span className="text-sm font-medium text-gold">
-                      ${dest.estimatedBudget.min}–${dest.estimatedBudget.max}
+                      {formatPrice(dest.estimatedBudget.min)}–{formatPrice(dest.estimatedBudget.max)}
                     </span>
                   </div>
                 </div>
@@ -159,7 +162,7 @@ export function DestinationsGrid() {
           className="flex justify-center mt-12"
         >
           <Link href="/destinations" className="btn-ghost flex items-center gap-2">
-            View All Destinations
+            {t.general.exploreAll} {t.sections.destinations}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>

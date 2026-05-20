@@ -8,7 +8,7 @@ import {
   CheckCircle, Clock, MapPin, Navigation, Phone,
   Star, Share2, Calendar, Users, Copy, Check,
 } from 'lucide-react'
-import { pusherClient } from '@/lib/pusher-client'
+import { getPusherClient } from '@/lib/pusher-client'
 
 const MapView = dynamic(() => import('./map-view'), { ssr: false, loading: () => (
   <div className="w-full h-full bg-volcanic-200 flex items-center justify-center rounded-2xl">
@@ -44,7 +44,7 @@ export function BookingTrackerClient({ code }: { code: string }) {
   const [location, setLocation]   = useState<DriverLocation | null>(null)
   const [connected, setConnected] = useState(false)
   const [copied, setCopied]       = useState(false)
-  const channelRef = useRef<ReturnType<typeof pusherClient.subscribe> | null>(null)
+  const channelRef = useRef<{ unbind_all: () => void } | null>(null)
 
   // Load last known location on mount
   useEffect(() => {
@@ -54,9 +54,15 @@ export function BookingTrackerClient({ code }: { code: string }) {
       .catch(() => {})
   }, [code])
 
-  // Subscribe to Pusher real-time updates
+  // Subscribe to Pusher real-time updates (lazy init — browser only)
   useEffect(() => {
-    const channel = pusherClient.subscribe(`booking-${code}`)
+    let client: ReturnType<typeof getPusherClient>
+    try {
+      client = getPusherClient()
+    } catch {
+      return
+    }
+    const channel = client.subscribe(`booking-${code}`)
     channelRef.current = channel
 
     channel.bind('pusher:subscription_succeeded', () => setConnected(true))
@@ -67,7 +73,7 @@ export function BookingTrackerClient({ code }: { code: string }) {
 
     return () => {
       channel.unbind_all()
-      pusherClient.unsubscribe(`booking-${code}`)
+      client.unsubscribe(`booking-${code}`)
     }
   }, [code])
 

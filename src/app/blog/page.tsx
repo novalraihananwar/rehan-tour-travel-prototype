@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Clock, ArrowRight } from 'lucide-react'
 import { blogPosts } from '@/lib/data'
+import { useLanguage } from '@/lib/i18n'
 
 const categoryColors: Record<string, string> = {
   'East Java': 'bg-sunset/15 text-sunset border-sunset/25',
@@ -27,6 +28,7 @@ const categoryMap: Record<string, string> = {
 const tags = ['All', 'East Java', 'Bali', 'Volcano', 'Hidden Gems', 'Tips', 'Culture']
 
 export default function BlogPage() {
+  const { t } = useLanguage()
   const [activeTag, setActiveTag] = useState('All')
 
   const filtered = blogPosts.filter(p => {
@@ -44,11 +46,11 @@ export default function BlogPage() {
         <Image src="https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=1920&q=60" alt="Blog" fill className="object-cover opacity-15" />
         <div className="absolute inset-0 bg-gradient-to-b from-volcanic/50 to-volcanic" />
         <div className="relative z-10 text-center px-4">
-          <p className="text-xs text-sunset uppercase tracking-widest mb-3">Travel Journal</p>
+          <p className="text-xs text-sunset uppercase tracking-widest mb-3">{t.sections.blog}</p>
           <h1 className="font-display text-display-xl text-cream mb-3">
             Stories, Guides &<br /><span className="text-gradient-sunset">Hidden Gems</span>
           </h1>
-          <p className="text-cream-muted max-w-xl mx-auto">Insider guides and real stories from years of guiding travelers across East Java and Bali.</p>
+          <p className="text-cream-muted max-w-xl mx-auto">Insider guides and real stories from years of guiding travelers across {t.nav.eastJava} and {t.nav.bali}.</p>
         </div>
       </div>
 
@@ -92,7 +94,7 @@ export default function BlogPage() {
                     <span>{featured.readTime}</span>
                   </div>
                   <span className="flex items-center gap-1 text-sm text-sunset font-medium">
-                    Read <ArrowRight className="w-4 h-4" />
+                    {t.general.readMore} <ArrowRight className="w-4 h-4" />
                   </span>
                 </div>
               </div>

@@ -1,0 +1,3 @@
+[     813ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://rehan-tour-travel-prototype.vercel.app/booking/RTT-TEST:0
+[     923ms] [ERROR] You must pass your app key when you instantiate Pusher. @ https://rehan-tour-travel-prototype.vercel.app/_next/static/chunks/23-760953c945364c8b.js:0
+[     923ms] You must pass your app key when you instantiate Pusher.

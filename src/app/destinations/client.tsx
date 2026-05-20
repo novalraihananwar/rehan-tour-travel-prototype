@@ -4,20 +4,23 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Filter, MapPin, Clock, ArrowRight, TrendingUp } from 'lucide-react'
+import { Search, Clock, TrendingUp } from 'lucide-react'
 import { destinations } from '@/lib/data'
 import { Spotlight } from '@/components/ui/spotlight'
+import { useLanguage } from '@/lib/i18n'
 
-const regions = ['All', 'East Java', 'Bali'] as const
 const categories = ['All', 'Volcano', 'Waterfall', 'City', 'Temple', 'Beach', 'Island', 'Culture']
 
 export function DestinationsPageClient() {
+  const { t, formatPrice } = useLanguage()
   const [region, setRegion] = useState<string>('All')
   const [category, setCategory] = useState<string>('All')
   const [search, setSearch] = useState('')
 
+  const regions = ['All', t.nav.eastJava, t.nav.bali] as const
+
   const filtered = destinations.filter((d) => {
-    const matchRegion = region === 'All' || (region === 'East Java' ? d.region === 'east-java' : d.region === 'bali')
+    const matchRegion = region === 'All' || (region === t.nav.eastJava ? d.region === 'east-java' : d.region === 'bali')
     const matchCat = category === 'All' || d.category.includes(category)
     const matchSearch = !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.description.toLowerCase().includes(search.toLowerCase())
     return matchRegion && matchCat && matchSearch
@@ -41,7 +44,7 @@ export function DestinationsPageClient() {
             East Java & Bali<br /><span className="text-gradient-sunset">Destinations</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-cream-muted text-lg max-w-xl mx-auto">
-            {destinations.length} extraordinary destinations across two of Indonesia's most iconic regions.
+            {destinations.length} {t.sections.destinations.toLowerCase()} · {t.nav.eastJava} & {t.nav.bali}
           </motion.p>
         </div>
       </div>
@@ -128,7 +131,7 @@ export function DestinationsPageClient() {
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {dest.duration}</span>
                       <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> {dest.difficulty}</span>
                     </div>
-                    <span className="text-gold font-medium">${dest.estimatedBudget.min}–${dest.estimatedBudget.max}</span>
+                    <span className="text-gold font-medium">{formatPrice(dest.estimatedBudget.min)}–{formatPrice(dest.estimatedBudget.max)}</span>
                   </div>
                 </div>
               </Link>

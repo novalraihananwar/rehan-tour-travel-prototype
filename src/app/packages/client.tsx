@@ -4,14 +4,16 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Clock, Users, Star, ArrowRight, Zap, Crown, Heart, Filter } from 'lucide-react'
+import { Clock, Users, Star, ArrowRight, Filter } from 'lucide-react'
 import { tourPackages } from '@/lib/data'
+import { useLanguage } from '@/lib/i18n'
 
 const types = ['All', 'Shared', 'Private', 'Luxury', 'Honeymoon']
 const durations = ['All', '1–2 Days', '3–4 Days', '5+ Days']
 const sortOptions = ['Featured', 'Price Low-High', 'Price High-Low', 'Rating', 'Duration']
 
 export function PackagesPageClient() {
+  const { t, formatPrice } = useLanguage()
   const [type, setType] = useState('All')
   const [duration, setDuration] = useState('All')
   const [sort, setSort] = useState('Featured')
@@ -119,16 +121,16 @@ export function PackagesPageClient() {
                     <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Max {pkg.maxGroupSize}</span>
                     <span className={`flex items-center gap-1.5 ${pkg.availableSeats <= 4 ? 'text-lava' : 'text-jungle-light'}`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${pkg.availableSeats <= 4 ? 'bg-lava' : 'bg-jungle-light'}`} />
-                      {pkg.availableSeats} left
+                      {pkg.availableSeats} {t.general.seatsLeft}
                     </span>
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-white/5">
                     <div>
-                      <span className="text-2xl font-bold text-gradient-sunset font-display">${pkg.price.usd}</span>
-                      <span className="text-xs text-cream-muted ml-1">/person</span>
+                      <span className="text-2xl font-bold text-gradient-sunset font-display">{formatPrice(pkg.price.usd)}</span>
+                      <span className="text-xs text-cream-muted ml-1">{t.general.perPerson}</span>
                     </div>
                     <span className="flex items-center gap-1 text-xs font-medium text-cream-muted hover:text-sunset transition-colors">
-                      Details <ArrowRight className="w-3.5 h-3.5" />
+                      {t.general.viewDetails} <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
                 </div>
