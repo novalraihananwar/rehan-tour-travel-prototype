@@ -1,0 +1,263 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "R Rehan Tour & Travel" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e9]: R
+        - generic [ref=e10]:
+          - generic [ref=e11]: Rehan
+          - generic [ref=e12]: Tour & Travel
+      - navigation [ref=e13]:
+        - link "Destinations" [ref=e15] [cursor=pointer]:
+          - /url: /destinations
+          - text: Destinations
+          - img [ref=e16]
+        - link "Tour Packages" [ref=e19] [cursor=pointer]:
+          - /url: /packages
+          - text: Tour Packages
+          - img [ref=e20]
+        - link "Blog" [ref=e23] [cursor=pointer]:
+          - /url: /blog
+      - generic [ref=e24]:
+        - button "🇬🇧 EN" [ref=e26] [cursor=pointer]:
+          - img [ref=e27]
+          - generic [ref=e30]: 🇬🇧 EN
+        - link "Book Now" [ref=e31] [cursor=pointer]:
+          - /url: /booking
+  - main [ref=e32]:
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - img "Blog" [ref=e35]
+        - generic [ref=e37]:
+          - paragraph [ref=e38]: Travel Journal
+          - heading "Stories, Guides & Hidden Gems" [level=1] [ref=e39]:
+            - text: Stories, Guides &
+            - text: Hidden Gems
+          - paragraph [ref=e40]: Expert insights from years of guiding international travelers across East Java and Bali.
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - button "All" [ref=e43] [cursor=pointer]
+          - button "East Java Adventure" [ref=e44] [cursor=pointer]
+          - button "Hidden Gems Indonesia" [ref=e45] [cursor=pointer]
+          - button "Bali Travel Guide" [ref=e46] [cursor=pointer]
+          - button "Backpacker Tips" [ref=e47] [cursor=pointer]
+          - button "Volcano Adventures" [ref=e48] [cursor=pointer]
+          - button "Cultural Experiences" [ref=e49] [cursor=pointer]
+        - 'link "Mount Bromo Sunrise: The Complete 2026 Guide (Times, Viewpoints & Insider Tips) East Java Adventure Mount Bromo Sunrise: The Complete 2026 Guide (Times, Viewpoints & Insider Tips) Penanjakan at 4 am versus Bukit Cinta at 4:30 am. The exact time sunrise hits the Bromo caldera by month, which jeep routes avoid the crowds, and what to wear when it''s 5°C and you''re standing on volcanic ash. Rehan Travel Team Rehan Travel Team · 9 min read Read" [ref=e50] [cursor=pointer]':
+          - /url: /blog/ultimate-bromo-sunrise-guide
+          - generic [ref=e51]:
+            - 'img "Mount Bromo Sunrise: The Complete 2026 Guide (Times, Viewpoints & Insider Tips)" [ref=e53]'
+            - generic [ref=e54]:
+              - generic [ref=e55]: East Java Adventure
+              - 'heading "Mount Bromo Sunrise: The Complete 2026 Guide (Times, Viewpoints & Insider Tips)" [level=2] [ref=e56]'
+              - paragraph [ref=e57]: Penanjakan at 4 am versus Bukit Cinta at 4:30 am. The exact time sunrise hits the Bromo caldera by month, which jeep routes avoid the crowds, and what to wear when it's 5°C and you're standing on volcanic ash.
+              - generic [ref=e58]:
+                - generic [ref=e59]:
+                  - img "Rehan Travel Team" [ref=e60]
+                  - generic [ref=e61]: Rehan Travel Team
+                  - generic [ref=e62]: ·
+                  - img [ref=e63]
+                  - generic [ref=e66]: 9 min read
+                - generic [ref=e67]:
+                  - text: Read
+                  - img [ref=e68]
+        - generic [ref=e70]:
+          - link "7 East Java Spots Most Tourists Never Find (And How to Reach Them) Hidden Gems Indonesia 7 East Java Spots Most Tourists Never Find (And How to Reach Them) Beyond the Bromo–Ijen circuit, East Java hides an extraordinary second layer. A volcanic sea-cliff waterfall. A forest that looks like Fangorn. An acidic blue lake with no entrance sign. Here are the seven we keep coming back to. Rehan Travel Team Rehan Travel Team 13 min read" [ref=e71] [cursor=pointer]:
+            - /url: /blog/7-hidden-gems-east-java
+            - generic [ref=e72]:
+              - img "7 East Java Spots Most Tourists Never Find (And How to Reach Them)" [ref=e73]
+              - generic [ref=e75]: Hidden Gems Indonesia
+            - generic [ref=e76]:
+              - heading "7 East Java Spots Most Tourists Never Find (And How to Reach Them)" [level=3] [ref=e77]
+              - paragraph [ref=e78]: Beyond the Bromo–Ijen circuit, East Java hides an extraordinary second layer. A volcanic sea-cliff waterfall. A forest that looks like Fangorn. An acidic blue lake with no entrance sign. Here are the seven we keep coming back to.
+              - generic [ref=e79]:
+                - generic [ref=e80]:
+                  - img "Rehan Travel Team" [ref=e81]
+                  - generic [ref=e82]: Rehan Travel Team
+                - generic [ref=e83]:
+                  - img [ref=e84]
+                  - text: 13 min read
+          - 'link "Ijen Blue Fire: What It Actually Looks Like (And What Nobody Tells You) Volcano Adventures Ijen Blue Fire: What It Actually Looks Like (And What Nobody Tells You) It''s not a campfire. It''s not a glow. It''s liquid sulfur catching light and cascading in electric-blue rivers down the cliff face. Here''s a frank guide to what the Ijen midnight hike is really like — the cold, the smell, the miners, and the moment. Rehan Travel Team Rehan Travel Team 11 min read" [ref=e87] [cursor=pointer]':
+            - /url: /blog/ijen-blue-fire-guide
+            - generic [ref=e88]:
+              - 'img "Ijen Blue Fire: What It Actually Looks Like (And What Nobody Tells You)" [ref=e89]'
+              - generic [ref=e91]: Volcano Adventures
+            - generic [ref=e92]:
+              - 'heading "Ijen Blue Fire: What It Actually Looks Like (And What Nobody Tells You)" [level=3] [ref=e93]'
+              - paragraph [ref=e94]: It's not a campfire. It's not a glow. It's liquid sulfur catching light and cascading in electric-blue rivers down the cliff face. Here's a frank guide to what the Ijen midnight hike is really like — the cold, the smell, the miners, and the moment.
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - img "Rehan Travel Team" [ref=e97]
+                  - generic [ref=e98]: Rehan Travel Team
+                - generic [ref=e99]:
+                  - img [ref=e100]
+                  - text: 11 min read
+          - 'link "Surabaya to Bali Overland: Budget Breakdown, Route, and Real Costs in 2026 Backpacker Tips Surabaya to Bali Overland: Budget Breakdown, Route, and Real Costs in 2026 The Surabaya–Bromo–Ijen–Bali land route is the best-value adventure in Southeast Asia that most travellers skip. Here''s what it actually costs, how long each section takes, and why doing it by shared HiAce is smarter than piecing it together yourself. Rehan Travel Team Rehan Travel Team 16 min read" [ref=e103] [cursor=pointer]':
+            - /url: /blog/backpacking-surabaya-to-bali
+            - generic [ref=e104]:
+              - 'img "Surabaya to Bali Overland: Budget Breakdown, Route, and Real Costs in 2026" [ref=e105]'
+              - generic [ref=e107]: Backpacker Tips
+            - generic [ref=e108]:
+              - 'heading "Surabaya to Bali Overland: Budget Breakdown, Route, and Real Costs in 2026" [level=3] [ref=e109]'
+              - paragraph [ref=e110]: The Surabaya–Bromo–Ijen–Bali land route is the best-value adventure in Southeast Asia that most travellers skip. Here's what it actually costs, how long each section takes, and why doing it by shared HiAce is smarter than piecing it together yourself.
+              - generic [ref=e111]:
+                - generic [ref=e112]:
+                  - img "Rehan Travel Team" [ref=e113]
+                  - generic [ref=e114]: Rehan Travel Team
+                - generic [ref=e115]:
+                  - img [ref=e116]
+                  - text: 16 min read
+          - 'link "Best Time to Visit Bali in 2026: Month-by-Month Breakdown for Different Trips Bali Travel Guide Best Time to Visit Bali in 2026: Month-by-Month Breakdown for Different Trips Dry season is not always the right answer. Surfing, rice terrace photography, temple ceremonies, and Nyepi each have their own optimal months. We break down every month of the year for different types of Bali travel. Rehan Travel Team Rehan Travel Team 10 min read" [ref=e119] [cursor=pointer]':
+            - /url: /blog/best-time-to-visit-bali
+            - generic [ref=e120]:
+              - 'img "Best Time to Visit Bali in 2026: Month-by-Month Breakdown for Different Trips" [ref=e121]'
+              - generic [ref=e123]: Bali Travel Guide
+            - generic [ref=e124]:
+              - 'heading "Best Time to Visit Bali in 2026: Month-by-Month Breakdown for Different Trips" [level=3] [ref=e125]'
+              - paragraph [ref=e126]: Dry season is not always the right answer. Surfing, rice terrace photography, temple ceremonies, and Nyepi each have their own optimal months. We break down every month of the year for different types of Bali travel.
+              - generic [ref=e127]:
+                - generic [ref=e128]:
+                  - img "Rehan Travel Team" [ref=e129]
+                  - generic [ref=e130]: Rehan Travel Team
+                - generic [ref=e131]:
+                  - img [ref=e132]
+                  - text: 10 min read
+          - 'link "How to Travel Indonesia Like a Local: 11 Things Guides Never Tell Their Groups Cultural Experiences How to Travel Indonesia Like a Local: 11 Things Guides Never Tell Their Groups After years of guiding international travellers across Java and Bali, here are the 11 things we notice that separate the tourists from the travellers — from when to eat to how to negotiate at markets to which temples require barefoot silence. Rehan Travel Team Rehan Travel Team 12 min read" [ref=e135] [cursor=pointer]':
+            - /url: /blog/explore-indonesia-like-local
+            - generic [ref=e136]:
+              - 'img "How to Travel Indonesia Like a Local: 11 Things Guides Never Tell Their Groups" [ref=e137]'
+              - generic [ref=e139]: Cultural Experiences
+            - generic [ref=e140]:
+              - 'heading "How to Travel Indonesia Like a Local: 11 Things Guides Never Tell Their Groups" [level=3] [ref=e141]'
+              - paragraph [ref=e142]: After years of guiding international travellers across Java and Bali, here are the 11 things we notice that separate the tourists from the travellers — from when to eat to how to negotiate at markets to which temples require barefoot silence.
+              - generic [ref=e143]:
+                - generic [ref=e144]:
+                  - img "Rehan Travel Team" [ref=e145]
+                  - generic [ref=e146]: Rehan Travel Team
+                - generic [ref=e147]:
+                  - img [ref=e148]
+                  - text: 12 min read
+  - contentinfo [ref=e151]:
+    - generic [ref=e152]:
+      - generic [ref=e153]:
+        - generic [ref=e154]:
+          - link "R Rehan Tour & Travel East Java & Bali" [ref=e155] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e157]: R
+            - generic [ref=e158]:
+              - generic [ref=e159]: Rehan Tour & Travel
+              - generic [ref=e160]: East Java & Bali
+          - paragraph [ref=e161]: Premium cinematic adventures across East Java and Bali. 30 Toyota HiAce vehicles, expert guides, and unforgettable experiences since 2018.
+          - generic [ref=e162]:
+            - generic [ref=e163]:
+              - img [ref=e164]
+              - generic [ref=e166]: +62 812-3456-7890 (WhatsApp)
+            - generic [ref=e167]:
+              - img [ref=e168]
+              - generic [ref=e171]: hello@rehantour.id
+            - generic [ref=e172]:
+              - img [ref=e173]
+              - generic [ref=e176]: Jl. Raya Bromo No.1, Surabaya, East Java
+          - generic [ref=e177]:
+            - link "Instagram" [ref=e178] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e179]
+            - link "YouTube" [ref=e182] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e183]
+            - link "Facebook" [ref=e186] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e187]
+        - generic [ref=e189]:
+          - heading "Destinations" [level=3] [ref=e190]
+          - list [ref=e191]:
+            - listitem [ref=e192]:
+              - link "Mount Bromo" [ref=e193] [cursor=pointer]:
+                - /url: /destinations/mount-bromo
+            - listitem [ref=e194]:
+              - link "Ijen Crater" [ref=e195] [cursor=pointer]:
+                - /url: /destinations/ijen-crater
+            - listitem [ref=e196]:
+              - link "Tumpak Sewu" [ref=e197] [cursor=pointer]:
+                - /url: /destinations/tumpak-sewu-waterfall
+            - listitem [ref=e198]:
+              - link "Ubud Bali" [ref=e199] [cursor=pointer]:
+                - /url: /destinations/ubud
+            - listitem [ref=e200]:
+              - link "Nusa Penida" [ref=e201] [cursor=pointer]:
+                - /url: /destinations/nusa-penida
+            - listitem [ref=e202]:
+              - link "Uluwatu" [ref=e203] [cursor=pointer]:
+                - /url: /destinations/uluwatu
+        - generic [ref=e204]:
+          - heading "Tour Packages" [level=3] [ref=e205]
+          - list [ref=e206]:
+            - listitem [ref=e207]:
+              - link "Bromo Sunrise Tour" [ref=e208] [cursor=pointer]:
+                - /url: /packages/bromo-sunrise-tour
+            - listitem [ref=e209]:
+              - link "Bromo + Ijen Expedition" [ref=e210] [cursor=pointer]:
+                - /url: /packages/bromo-ijen-expedition
+            - listitem [ref=e211]:
+              - link "Surabaya → Bali" [ref=e212] [cursor=pointer]:
+                - /url: /packages/surabaya-bali-overland
+            - listitem [ref=e213]:
+              - link "Bali Tropical Escape" [ref=e214] [cursor=pointer]:
+                - /url: /packages/bali-tropical-escape
+            - listitem [ref=e215]:
+              - link "Luxury East Java" [ref=e216] [cursor=pointer]:
+                - /url: /packages/luxury-east-java-escape
+            - listitem [ref=e217]:
+              - link "Honeymoon Package" [ref=e218] [cursor=pointer]:
+                - /url: /packages/honeymoon-tropical-bali
+        - generic [ref=e219]:
+          - heading "Company" [level=3] [ref=e220]
+          - list [ref=e221]:
+            - listitem [ref=e222]:
+              - link "About Us" [ref=e223] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e224]:
+              - link "Our Fleet" [ref=e225] [cursor=pointer]:
+                - /url: /fleet
+            - listitem [ref=e226]:
+              - link "Blog" [ref=e227] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e228]:
+              - link "Admin Dashboard" [ref=e229] [cursor=pointer]:
+                - /url: /admin
+            - listitem [ref=e230]:
+              - link "Privacy Policy" [ref=e231] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e232]:
+              - link "Terms of Service" [ref=e233] [cursor=pointer]:
+                - /url: /terms
+      - generic [ref=e235]:
+        - generic [ref=e236]:
+          - heading "Get travel inspiration" [level=3] [ref=e237]
+          - paragraph [ref=e238]: Hidden gems, departure alerts, and exclusive deals — straight to your inbox.
+        - generic [ref=e239]:
+          - textbox "your@email.com" [ref=e240]
+          - button "Subscribe" [ref=e241] [cursor=pointer]:
+            - img [ref=e242]
+            - text: Subscribe
+      - generic [ref=e246]:
+        - paragraph [ref=e247]: "Secure payment methods accepted:"
+        - generic [ref=e248]:
+          - generic [ref=e249]: Visa
+          - generic [ref=e250]: Mastercard
+          - generic [ref=e251]: PayPal
+          - generic [ref=e252]: QRIS
+          - generic [ref=e253]: Bank Transfer
+          - generic [ref=e254]: Xendit
+      - generic [ref=e255]:
+        - paragraph [ref=e256]: © 2026 Rehan Tour & Travel. All rights reserved. Licensed by Ministry of Tourism Indonesia.
+        - generic [ref=e257]:
+          - generic [ref=e258]: 🇮🇩 Made with love in East Java
+          - generic [ref=e259]:
+            - generic [ref=e260]: 🌋
+            - generic [ref=e261]: 🏝️
+            - generic [ref=e262]: 🌊
+            - generic [ref=e263]: 🦅
+  - button [ref=e268] [cursor=pointer]:
+    - img [ref=e270]
+  - alert [ref=e272]

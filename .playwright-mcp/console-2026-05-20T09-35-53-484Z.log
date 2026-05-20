@@ -1,0 +1,5 @@
+[    1611ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/favicon.ico:0
+[   34542ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/about?_rsc=1wtp7:0
+[   34559ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/fleet?_rsc=1wtp7:0
+[   34598ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/privacy?_rsc=1wtp7:0
+[   34888ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/terms?_rsc=1wtp7:0

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Check, ArrowRight, ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Navigation } from 'lucide-react'
+import { Check, ArrowRight, ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Navigation, Phone as PhoneIcon } from 'lucide-react'
 import { tourPackages } from '@/lib/data'
 import { BookingCalendar } from '@/components/ui/calendar'
 import { generateBookingCode } from '@/lib/utils'
@@ -79,52 +79,83 @@ function BookingPageInner() {
   const handleSubmit = () => setSubmitted(true)
 
   if (submitted) {
+    const waMessage = encodeURIComponent(
+      `Halo Rehan Tour! Saya baru saja booking:\n\n` +
+      `*Kode:* ${bookingCode}\n` +
+      `*Paket:* ${selectedPkg?.title || '-'}\n` +
+      `*Tanggal:* ${formData.date ? formatDateShort(formData.date) : '-'}\n` +
+      `*Tamu:* ${formData.guests} orang\n` +
+      `*Pickup:* ${formData.pickupName || '-'}\n` +
+      `*Total:* ${formatPrice(totalPriceUSD + pickupFeeUSD)}\n\n` +
+      `Mohon konfirmasi booking saya. Terima kasih!`
+    )
+    const waLink = `https://wa.me/6281234567890?text=${waMessage}`
+
     return (
-      <div className="min-h-screen bg-volcanic flex items-center justify-center pt-20 px-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-card rounded-3xl p-10 max-w-lg w-full text-center">
-          <div className="w-20 h-20 rounded-full bg-jungle/20 border-2 border-jungle flex items-center justify-center mx-auto mb-6">
-            <Check className="w-10 h-10 text-jungle-light" />
-          </div>
-          <h1 className="font-display text-3xl text-cream mb-2">{t.booking.confirmed}</h1>
-          <p className="text-cream-muted mb-6">{t.booking.confirmedSub}</p>
+      <div className="min-h-screen bg-volcanic flex items-center justify-center pt-20 px-4 py-12">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-card rounded-3xl p-8 max-w-lg w-full">
 
-          <div className="bg-volcanic-400/50 rounded-2xl p-5 mb-6 text-left space-y-3">
-            <div className="text-center">
-              <p className="text-xs text-cream-muted">{t.booking.bookingCode}</p>
-              <p className="font-mono text-2xl text-sunset font-bold tracking-wider">{bookingCode}</p>
+          {/* Success icon */}
+          <div className="text-center mb-6">
+            <div className="w-20 h-20 rounded-full bg-jungle/20 border-2 border-jungle flex items-center justify-center mx-auto mb-4">
+              <Check className="w-10 h-10 text-jungle-light" />
             </div>
-            <div className="section-divider" />
-            {selectedPkg && (
-              <>
-                <div className="flex justify-between text-sm">
-                  <span className="text-cream-muted">Package</span>
-                  <span className="text-cream font-medium">{selectedPkg.title}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-cream-muted">{t.booking.travelers}</span>
-                  <span className="text-cream">{formData.guests} {t.booking.travelers_label}</span>
-                </div>
-                {formData.date && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-cream-muted">{t.booking.departure}</span>
-                    <span className="text-cream">{formatDateShort(formData.date)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm font-medium">
-                  <span className="text-cream-muted">{t.booking.total}</span>
-                  <span className="text-sunset">{formatPrice(totalPriceUSD + pickupFeeUSD)}</span>
-                </div>
-              </>
-            )}
+            <h1 className="font-display text-3xl text-cream mb-1">Booking confirmed!</h1>
+            <p className="text-cream-muted text-sm">We&apos;ll contact you via WhatsApp shortly.</p>
           </div>
 
-          <p className="text-xs text-cream-muted mb-6">
-            {t.booking.whatsappConfirm} <span className="text-cream">{formData.whatsapp}</span>
-          </p>
+          {/* Booking code — prominent */}
+          <div className="bg-volcanic-400/50 rounded-2xl p-5 mb-5 text-center border border-sunset/15">
+            <p className="text-xs text-cream-muted mb-1">Your booking code</p>
+            <p className="font-mono text-3xl text-sunset font-bold tracking-widest">{bookingCode}</p>
+            <p className="text-xs text-cream-muted mt-1">Save this to track your trip</p>
+          </div>
 
-          <div className="flex gap-3">
-            <Link href="/" className="btn-ghost flex-1 justify-center text-sm py-3">{t.booking.backHome}</Link>
-            <Link href="/packages" className="btn-primary flex-1 justify-center text-sm py-3">{t.booking.morePackages}</Link>
+          {/* Trip summary */}
+          {selectedPkg && (
+            <div className="space-y-2.5 text-sm mb-5">
+              {[
+                { label: 'Package', value: selectedPkg.title },
+                { label: 'Travelers', value: `${formData.guests} person${formData.guests > 1 ? 's' : ''}` },
+                ...(formData.date ? [{ label: 'Departure', value: formatDateShort(formData.date) }] : []),
+                ...(formData.pickupName ? [{ label: 'Pickup', value: formData.pickupName }] : []),
+                { label: 'Total', value: formatPrice(totalPriceUSD + pickupFeeUSD), highlight: true },
+              ].map(item => (
+                <div key={item.label} className="flex justify-between">
+                  <span className="text-cream-muted">{item.label}</span>
+                  <span className={(item as { highlight?: boolean }).highlight ? 'text-sunset font-bold font-display text-base' : 'text-cream font-medium'}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* CTA buttons */}
+          <div className="space-y-3">
+            {/* Track booking */}
+            <Link
+              href={`/booking/${bookingCode}`}
+              className="btn-primary w-full justify-center py-3.5"
+            >
+              <Navigation className="w-4 h-4" />
+              Track my booking
+            </Link>
+
+            {/* WA confirmation */}
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full font-medium text-sm text-white transition-all duration-300 hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}
+            >
+              <Phone className="w-4 h-4" />
+              Confirm via WhatsApp
+            </a>
+
+            <div className="flex gap-3">
+              <Link href="/" className="btn-ghost flex-1 justify-center text-sm py-2.5">Home</Link>
+              <Link href="/packages" className="btn-ghost flex-1 justify-center text-sm py-2.5">More packages</Link>
+            </div>
           </div>
         </motion.div>
       </div>

@@ -6,7 +6,28 @@
       "Bash(del *)",
       "Bash(xargs sed -i \"s/\\\\.toLocaleString\\(\\)/.toLocaleString\\('en-US'\\)/g\")",
       "Bash(python3 -c ' *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npx skills *)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "Bash(Test-Path *)",
+      "WebFetch(domain:rehan-tour-travel-prototype.vercel.app)",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "Bash(npm run *)",
+      "Bash(Start-Process -NoNewWindow -FilePath \"npm\" -ArgumentList \"run\",\"dev\")",
+      "Bash(Start-Sleep -Seconds 8)",
+      "PowerShell(Out-Null *)",
+      "mcp__plugin_playwright_playwright__browser_press_key",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(vercel --prod)",
+      "Bash(node -e \"require\\('leaflet'\\)\")",
+      "Bash(vercel logs *)",
+      "Bash(git commit -m 'add .npmrc legacy-peer-deps for react-leaflet compatibility *)",
+      "Bash(npx uipro *)",
+      "WebFetch(domain:ui-ux-pro-max-skill.nextlevelbuilder.io)",
+      "Bash(node -e \"require\\('pusher'\\); console.log\\('pusher ok'\\)\")",
+      "Bash(node -e \"require\\('pusher-js'\\); console.log\\('pusher-js ok'\\)\")"
     ]
   }
 }

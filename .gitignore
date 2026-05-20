@@ -9,3 +9,8 @@ dist/
 Thumbs.db
 npm-debug.log*
 .vscode/
+
+.vercel
+
+# Local Netlify folder
+.netlify
