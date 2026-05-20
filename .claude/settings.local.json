@@ -30,7 +30,8 @@
       "Bash(node -e \"require\\('pusher-js'\\); console.log\\('pusher-js ok'\\)\")",
       "Bash(vercel --version)",
       "Bash(vercel integration *)",
-      "Bash(vercel env *)"
+      "Bash(vercel env *)",
+      "Bash(git commit -m 'fix driver login fallback + light map + pickup corridor restriction *)"
     ]
   }
 }

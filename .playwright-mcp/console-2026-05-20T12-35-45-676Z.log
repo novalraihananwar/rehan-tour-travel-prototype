@@ -9,3 +9,13 @@
 [ 5648814ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/about?_rsc=34tdv:0
 [ 5677695ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/privacy?_rsc=34tdv:0
 [ 5678077ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/terms?_rsc=34tdv:0
+[ 6620192ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/about?_rsc=1wtp7:0
+[ 6620193ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/fleet?_rsc=1wtp7:0
+[ 6620241ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/privacy?_rsc=1wtp7:0
+[ 6620518ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/terms?_rsc=1wtp7:0
+[ 6649635ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/about?_rsc=juyb8:0
+[ 6649638ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/fleet?_rsc=juyb8:0
+[ 6656948ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://rehan-tour-travel-prototype.vercel.app/api/driver/auth:0
+[ 6668467ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://rehan-tour-travel-prototype.vercel.app/api/driver/auth:0
+[ 6673468ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/privacy?_rsc=juyb8:0
+[ 6673490ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rehan-tour-travel-prototype.vercel.app/terms?_rsc=juyb8:0
