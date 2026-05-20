@@ -208,9 +208,14 @@ export default function AdminOverview() {
             <h3 className="font-medium text-cream text-sm flex items-center gap-2">
               <Truck className="w-4 h-4 text-sunset" /> Fleet Status
             </h3>
-            <Link href="/admin/fleet" className="text-xs text-sunset hover:text-gold transition-colors">
-              Manage →
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/admin/drivers" className="text-xs text-jungle-light hover:text-jungle transition-colors">
+                Live Map →
+              </Link>
+              <Link href="/admin/fleet" className="text-xs text-sunset hover:text-gold transition-colors">
+                Manage →
+              </Link>
+            </div>
           </div>
           <p className="text-xs text-cream-muted mb-4">Real-time, 30 vehicles</p>
           <ResponsiveContainer width="100%" height={160}>

@@ -1,0 +1,172 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "R Rehan Tour & Travel" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e9]: R
+        - generic [ref=e10]:
+          - generic [ref=e11]: Rehan
+          - generic [ref=e12]: Tour & Travel
+      - navigation [ref=e13]:
+        - link "Destinations" [ref=e15] [cursor=pointer]:
+          - /url: /destinations
+          - text: Destinations
+          - img [ref=e16]
+        - link "Tour Packages" [ref=e19] [cursor=pointer]:
+          - /url: /packages
+          - text: Tour Packages
+          - img [ref=e20]
+        - link "Blog" [ref=e23] [cursor=pointer]:
+          - /url: /blog
+      - generic [ref=e24]:
+        - button "🇬🇧 EN" [ref=e26] [cursor=pointer]:
+          - img [ref=e27]
+          - generic [ref=e30]: 🇬🇧 EN
+        - link "Book Now" [ref=e31] [cursor=pointer]:
+          - /url: /booking
+  - main [ref=e32]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - img [ref=e38]
+        - heading "Driver Portal" [level=1] [ref=e40]
+        - paragraph [ref=e41]: Rehan Tour & Travel
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: Username
+          - generic [ref=e45]:
+            - img [ref=e46]
+            - textbox "budi.santoso" [ref=e49]
+        - generic [ref=e50]:
+          - generic [ref=e51]: PIN
+          - generic [ref=e52]:
+            - img [ref=e53]
+            - textbox "••••••" [ref=e56]
+            - button [ref=e57] [cursor=pointer]:
+              - img [ref=e58]
+        - button "Masuk" [ref=e61] [cursor=pointer]
+      - paragraph [ref=e62]: "Demo: username demo · PIN 1234"
+      - paragraph [ref=e63]: Lupa PIN? Hubungi admin Rehan Tour & Travel
+  - contentinfo [ref=e64]:
+    - generic [ref=e65]:
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - link "R Rehan Tour & Travel East Java & Bali" [ref=e68] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e70]: R
+            - generic [ref=e71]:
+              - generic [ref=e72]: Rehan Tour & Travel
+              - generic [ref=e73]: East Java & Bali
+          - paragraph [ref=e74]: Premium cinematic adventures across East Java and Bali. 30 Toyota HiAce vehicles, expert guides, and unforgettable experiences since 2018.
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - img [ref=e77]
+              - generic [ref=e79]: +62 812-3456-7890 (WhatsApp)
+            - generic [ref=e80]:
+              - img [ref=e81]
+              - generic [ref=e84]: hello@rehantour.id
+            - generic [ref=e85]:
+              - img [ref=e86]
+              - generic [ref=e89]: Jl. Raya Bromo No.1, Surabaya, East Java
+          - generic [ref=e90]:
+            - link "Instagram" [ref=e91] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e92]
+            - link "YouTube" [ref=e95] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e96]
+            - link "Facebook" [ref=e99] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e100]
+        - generic [ref=e102]:
+          - heading "Destinations" [level=3] [ref=e103]
+          - list [ref=e104]:
+            - listitem [ref=e105]:
+              - link "Mount Bromo" [ref=e106] [cursor=pointer]:
+                - /url: /destinations/mount-bromo
+            - listitem [ref=e107]:
+              - link "Ijen Crater" [ref=e108] [cursor=pointer]:
+                - /url: /destinations/ijen-crater
+            - listitem [ref=e109]:
+              - link "Tumpak Sewu" [ref=e110] [cursor=pointer]:
+                - /url: /destinations/tumpak-sewu-waterfall
+            - listitem [ref=e111]:
+              - link "Ubud Bali" [ref=e112] [cursor=pointer]:
+                - /url: /destinations/ubud
+            - listitem [ref=e113]:
+              - link "Nusa Penida" [ref=e114] [cursor=pointer]:
+                - /url: /destinations/nusa-penida
+            - listitem [ref=e115]:
+              - link "Uluwatu" [ref=e116] [cursor=pointer]:
+                - /url: /destinations/uluwatu
+        - generic [ref=e117]:
+          - heading "Tour Packages" [level=3] [ref=e118]
+          - list [ref=e119]:
+            - listitem [ref=e120]:
+              - link "Bromo Sunrise Tour" [ref=e121] [cursor=pointer]:
+                - /url: /packages/bromo-sunrise-tour
+            - listitem [ref=e122]:
+              - link "Bromo + Ijen Expedition" [ref=e123] [cursor=pointer]:
+                - /url: /packages/bromo-ijen-expedition
+            - listitem [ref=e124]:
+              - link "Surabaya → Bali" [ref=e125] [cursor=pointer]:
+                - /url: /packages/surabaya-bali-overland
+            - listitem [ref=e126]:
+              - link "Bali Tropical Escape" [ref=e127] [cursor=pointer]:
+                - /url: /packages/bali-tropical-escape
+            - listitem [ref=e128]:
+              - link "Luxury East Java" [ref=e129] [cursor=pointer]:
+                - /url: /packages/luxury-east-java-escape
+            - listitem [ref=e130]:
+              - link "Honeymoon Package" [ref=e131] [cursor=pointer]:
+                - /url: /packages/honeymoon-tropical-bali
+        - generic [ref=e132]:
+          - heading "Company" [level=3] [ref=e133]
+          - list [ref=e134]:
+            - listitem [ref=e135]:
+              - link "About Us" [ref=e136] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e137]:
+              - link "Our Fleet" [ref=e138] [cursor=pointer]:
+                - /url: /fleet
+            - listitem [ref=e139]:
+              - link "Blog" [ref=e140] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e141]:
+              - link "Admin Dashboard" [ref=e142] [cursor=pointer]:
+                - /url: /admin
+            - listitem [ref=e143]:
+              - link "Privacy Policy" [ref=e144] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e145]:
+              - link "Terms of Service" [ref=e146] [cursor=pointer]:
+                - /url: /terms
+      - generic [ref=e148]:
+        - generic [ref=e149]:
+          - heading "Get travel inspiration" [level=3] [ref=e150]
+          - paragraph [ref=e151]: Hidden gems, departure alerts, and exclusive deals — straight to your inbox.
+        - generic [ref=e152]:
+          - textbox "your@email.com" [ref=e153]
+          - button "Subscribe" [ref=e154] [cursor=pointer]:
+            - img [ref=e155]
+            - text: Subscribe
+      - generic [ref=e159]:
+        - paragraph [ref=e160]: "Secure payment methods accepted:"
+        - generic [ref=e161]:
+          - generic [ref=e162]: Visa
+          - generic [ref=e163]: Mastercard
+          - generic [ref=e164]: PayPal
+          - generic [ref=e165]: QRIS
+          - generic [ref=e166]: Bank Transfer
+          - generic [ref=e167]: Xendit
+      - generic [ref=e168]:
+        - paragraph [ref=e169]: © 2026 Rehan Tour & Travel. All rights reserved. Licensed by Ministry of Tourism Indonesia.
+        - generic [ref=e170]:
+          - generic [ref=e171]: 🇮🇩 Made with love in East Java
+          - generic [ref=e172]:
+            - generic [ref=e173]: 🌋
+            - generic [ref=e174]: 🏝️
+            - generic [ref=e175]: 🌊
+            - generic [ref=e176]: 🦅
+  - button [ref=e181] [cursor=pointer]:
+    - img [ref=e183]
+  - alert [ref=e185]
