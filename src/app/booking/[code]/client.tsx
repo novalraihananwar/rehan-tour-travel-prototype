@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckCircle, Clock, MapPin, Navigation, Phone,
-  Star, Calendar, Users, Copy, Check,
+  Star, Share2, Calendar, Users, Copy, Check,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
 
