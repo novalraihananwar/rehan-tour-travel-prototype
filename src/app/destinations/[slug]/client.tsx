@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { MapPin, Clock, Thermometer, Sun, Wallet, ArrowRight, ChevronLeft, Star, Mountain, Droplets, Utensils, Camera } from 'lucide-react'
+import { MapPin, Clock, Thermometer, Sun, Wallet, ArrowRight, ChevronLeft, Star, Mountain, Droplets, Utensils, Camera, Sparkles } from 'lucide-react'
 import type { Destination } from '@/lib/data'
 import { tourPackages } from '@/lib/data'
 import { Glow } from '@/components/ui/glow'
@@ -15,6 +15,29 @@ export function DestinationDetailClient({ destination: d }: Props) {
     p.routeDescription.toLowerCase().includes(d.name.toLowerCase().split(' ')[0]) ||
     p.category.some(c => c.toLowerCase().includes(d.category.toLowerCase()))
   ).slice(0, 3)
+
+  // Best package to pre-select for booking — first related, or featured from same region as fallback
+  const primaryPackage = relatedPackages[0] ?? tourPackages.find(p =>
+    p.featured && (
+      d.region === 'east-java'
+        ? p.category.some(c => ['Volcano', 'Adventure', 'Waterfall', 'Overland'].includes(c))
+        : p.category.some(c => ['Bali', 'Culture', 'Beach', 'Island'].includes(c))
+    )
+  ) ?? null
+
+  const upsellPitch = (() => {
+    if (d.category === 'City')
+      return `Make the most of your time in ${d.name} — our guided tour covers hidden gems, local food spots, and stories you'd never find exploring alone.`
+    if (d.category === 'Volcano')
+      return 'Go deeper than the viewpoint. A fully guided summit experience with transport, entrance fees, and a licensed guide — all included.'
+    if (d.category === 'Waterfall')
+      return 'More than just a photo stop. Our guided trek includes the full trail, swimming spots, and local knowledge to do it safely.'
+    if (d.category.includes('Culture') || d.category.includes('Temple'))
+      return `Experience ${d.name} with purpose — local ceremonies, hidden corners, and stories most tourists never discover.`
+    if (d.category.includes('Island') || d.category.includes('Marine'))
+      return 'Discover the full island, not just the famous cliff — snorkeling, hidden beaches, and the real experience included.'
+    return 'A fully guided experience with pickup, entrance fees, and a local expert. Everything taken care of.'
+  })()
 
   return (
     <div className="min-h-screen bg-volcanic pt-16">
@@ -172,13 +195,62 @@ export function DestinationDetailClient({ destination: d }: Props) {
             <div className="glass-card rounded-2xl p-5 border-sunset/15">
               <h3 className="font-display text-lg text-cream mb-2">Visit {d.name}</h3>
               <p className="text-xs text-cream-muted mb-4">From ${d.estimatedBudget.min} per person · {d.duration}</p>
-              <Link href="/booking" className="btn-primary w-full justify-center text-sm py-3">
-                Book This Destination <ArrowRight className="w-4 h-4" />
-              </Link>
+              {primaryPackage ? (
+                <Link
+                  href={`/booking?package=${primaryPackage.slug}`}
+                  className="btn-primary w-full justify-center text-sm py-3"
+                >
+                  Book This Destination <ArrowRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <a
+                  href={`https://wa.me/6281234567890?text=Hi, I'd like to plan a trip to ${encodeURIComponent(d.name)}`}
+                  target="_blank"
+                  className="btn-primary w-full justify-center text-sm py-3 flex items-center gap-2"
+                >
+                  Plan Custom Trip <ArrowRight className="w-4 h-4" />
+                </a>
+              )}
               <Link href="/packages" className="btn-ghost w-full justify-center text-sm py-3 mt-2">
-                See Packages
+                Browse All Packages
               </Link>
             </div>
+
+            {/* Upsell card — shown when we have a package to pitch */}
+            {primaryPackage && (
+              <div className="glass-card rounded-2xl p-5 border-gold/20 bg-gradient-to-br from-gold/5 to-transparent">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-3.5 h-3.5 text-gold" />
+                  <span className="text-[10px] font-semibold text-gold uppercase tracking-widest">
+                    {relatedPackages.length > 0 ? 'Guided Experience' : 'While You\'re Here'}
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-cream mb-1 leading-snug">{primaryPackage.title}</p>
+                <p className="text-xs text-cream-muted mb-4 leading-relaxed">{upsellPitch}</p>
+                <div className="flex items-baseline gap-1.5 mb-1">
+                  <span className="text-xl font-bold text-sunset">${primaryPackage.price.usd}</span>
+                  <span className="text-xs text-cream-muted">/person</span>
+                  {'originalPrice' in primaryPackage && primaryPackage.originalPrice && (
+                    <span className="text-xs text-cream-muted line-through">
+                      ${(primaryPackage.originalPrice as { usd: number }).usd}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-cream-muted mb-4">{primaryPackage.duration} · All-inclusive</p>
+                <Link
+                  href={`/booking?package=${primaryPackage.slug}`}
+                  className="btn-primary w-full justify-center text-xs py-2.5"
+                >
+                  Book This Package <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href={`/packages/${primaryPackage.slug}`}
+                  className="block text-center text-[11px] text-cream-muted hover:text-cream mt-2.5 transition-colors"
+                >
+                  See full itinerary →
+                </Link>
+              </div>
+            )}
 
             {/* Related packages */}
             {relatedPackages.length > 0 && (
