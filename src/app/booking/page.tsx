@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Check, ArrowRight, ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Navigation, Phone as PhoneIcon } from 'lucide-react'
+import { Check, ArrowRight, ArrowLeft, User, Mail, Phone, MapPin, CreditCard, Calendar, Navigation, Phone as PhoneIcon, Sparkles } from 'lucide-react'
 import { tourPackages } from '@/lib/data'
 import { BookingCalendar } from '@/components/ui/calendar'
 import { generateBookingCode } from '@/lib/utils'
@@ -25,7 +25,14 @@ function BookingPageInner() {
   const params = useSearchParams()
   const { t, lang, formatPrice, formatPriceCompact, currency } = useLanguage()
 
-  const [step, setStep] = useState(1)
+  const destinationName = params.get('destinationName') || ''
+  const suggestSlug    = params.get('suggest') || ''
+  const isDestMode     = !!params.get('destination') && !params.get('package')
+
+  // Skip Step 1 if package already chosen OR coming from a destination page
+  const [step, setStep] = useState(() =>
+    (params.get('package') || params.get('destination')) ? 2 : 1
+  )
   const [formData, setFormData] = useState({
     packageId: params.get('package') || '',
     date: params.get('date') || '',
@@ -44,9 +51,10 @@ function BookingPageInner() {
   const [submitted, setSubmitted] = useState(false)
   const [bookingCode] = useState(generateBookingCode())
 
-  const selectedPkg = tourPackages.find((p) => p.slug === formData.packageId)
-  const totalPriceUSD = selectedPkg ? selectedPkg.price.usd * formData.guests : 0
-  const pickupFeeUSD = formData.pickupFee / 15000
+  const selectedPkg    = tourPackages.find((p) => p.slug === formData.packageId)
+  const suggestedPkg   = suggestSlug ? tourPackages.find((p) => p.slug === suggestSlug) : null
+  const totalPriceUSD  = selectedPkg ? selectedPkg.price.usd * formData.guests : 0
+  const pickupFeeUSD   = formData.pickupFee / 15000
 
   const TOTAL_STEPS = 5
   const steps = [
@@ -85,8 +93,8 @@ function BookingPageInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code:          bookingCode,
-          packageId:     formData.packageId,
-          packageTitle:  selectedPkg?.title || '',
+          packageId:     formData.packageId || params.get('destination') || 'custom',
+          packageTitle:  selectedPkg?.title || (destinationName ? `Trip to ${destinationName}` : 'Custom Trip'),
           date:          formData.date,
           guests:        formData.guests,
           pickupName:    formData.pickupName,
@@ -266,7 +274,8 @@ function BookingPageInner() {
           {/* Step 2 — Date & Guests */}
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="glass-card rounded-2xl p-6 md:p-8">
-              {selectedPkg && (
+              {/* Header: show selected package OR destination name */}
+              {selectedPkg ? (
                 <div className="flex items-center gap-3 mb-6 pb-5 border-b border-white/8">
                   <div className="relative w-12 h-10 rounded-lg overflow-hidden shrink-0">
                     <Image src={selectedPkg.coverImage} alt={selectedPkg.title} fill className="object-cover" />
@@ -276,7 +285,18 @@ function BookingPageInner() {
                     <p className="text-xs text-cream-muted">{selectedPkg.duration}</p>
                   </div>
                 </div>
-              )}
+              ) : isDestMode && destinationName ? (
+                <div className="flex items-center gap-3 mb-6 pb-5 border-b border-white/8">
+                  <div className="w-10 h-10 rounded-xl bg-sunset/15 border border-sunset/25 flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4 text-sunset" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-cream">Trip to {destinationName}</p>
+                    <p className="text-xs text-cream-muted">Custom visit · price confirmed via WhatsApp</p>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h2 className="font-display text-lg text-cream mb-1">When?</h2>
@@ -309,6 +329,44 @@ function BookingPageInner() {
                   </div>
                 </div>
               </div>
+
+              {/* Optional package upsell — destination mode only */}
+              {isDestMode && suggestedPkg && (
+                <div className="mt-6 pt-6 border-t border-white/8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-3.5 h-3.5 text-gold" />
+                    <p className="text-sm font-medium text-cream">Want to add a guided experience?</p>
+                    <span className="text-xs text-cream-muted ml-auto">Optional</span>
+                  </div>
+                  <div
+                    onClick={() => setFormData({
+                      ...formData,
+                      packageId: formData.packageId === suggestedPkg.slug ? '' : suggestedPkg.slug,
+                    })}
+                    className={`flex gap-4 p-4 rounded-xl cursor-pointer border transition-all ${
+                      formData.packageId === suggestedPkg.slug
+                        ? 'border-gold/40 bg-gold/8'
+                        : 'border-white/10 hover:border-gold/25'
+                    }`}
+                  >
+                    <div className="relative w-16 h-14 rounded-lg overflow-hidden shrink-0">
+                      <Image src={suggestedPkg.coverImage} alt={suggestedPkg.title} fill className="object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-cream">{suggestedPkg.title}</p>
+                      <p className="text-xs text-cream-muted mt-0.5">{suggestedPkg.duration} · +{formatPrice(suggestedPkg.price.usd)}/person</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 shrink-0 mt-1 flex items-center justify-center ${
+                      formData.packageId === suggestedPkg.slug ? 'border-gold bg-gold' : 'border-white/25'
+                    }`}>
+                      {formData.packageId === suggestedPkg.slug && <Check className="w-3 h-3 text-volcanic" />}
+                    </div>
+                  </div>
+                  <p className="text-xs text-cream-muted mt-2 text-center">
+                    {formData.packageId ? 'Package added ✓ — uncheck to remove' : 'Skip this to book a standalone visit — we\'ll confirm details via WhatsApp'}
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -388,7 +446,7 @@ function BookingPageInner() {
               {/* Order summary */}
               <div className="glass-card rounded-2xl p-6">
                 <h2 className="font-display text-xl text-cream mb-5">{t.booking.orderSummary}</h2>
-                {selectedPkg && (
+                {selectedPkg ? (
                   <div className="flex gap-4 mb-5">
                     <div className="relative w-20 h-16 rounded-xl overflow-hidden shrink-0">
                       <Image src={selectedPkg.coverImage} alt={selectedPkg.title} fill className="object-cover" />
@@ -399,12 +457,25 @@ function BookingPageInner() {
                       {formData.date && <p className="text-xs text-cream-muted">{formatDate(formData.date)}</p>}
                     </div>
                   </div>
-                )}
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between text-cream-muted">
-                    <span>{formatPrice(selectedPkg?.price.usd ?? 0)} × {formData.guests} {t.booking.travelers_label}</span>
-                    <span className="text-cream">{formatPrice(totalPriceUSD)}</span>
+                ) : isDestMode && destinationName ? (
+                  <div className="flex gap-4 mb-5">
+                    <div className="w-20 h-16 rounded-xl bg-sunset/10 border border-sunset/20 flex items-center justify-center shrink-0">
+                      <MapPin className="w-6 h-6 text-sunset" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-cream">Trip to {destinationName}</p>
+                      <p className="text-xs text-cream-muted">{formData.guests} {t.booking.travelers_label} · Custom visit</p>
+                      {formData.date && <p className="text-xs text-cream-muted">{formatDate(formData.date)}</p>}
+                    </div>
                   </div>
+                ) : null}
+                <div className="space-y-3 text-sm">
+                  {selectedPkg && (
+                    <div className="flex justify-between text-cream-muted">
+                      <span>{formatPrice(selectedPkg.price.usd)} × {formData.guests} {t.booking.travelers_label}</span>
+                      <span className="text-cream">{formatPrice(totalPriceUSD)}</span>
+                    </div>
+                  )}
                   {formData.pickupName && (
                     <div className="flex justify-between text-cream-muted">
                       <span className="flex items-center gap-1.5">
@@ -418,7 +489,11 @@ function BookingPageInner() {
                   )}
                   <div className="flex justify-between font-medium pt-3 border-t border-white/8 text-base">
                     <span className="text-cream">{t.booking.total}</span>
-                    <span className="text-sunset text-xl font-bold font-display">{formatPrice(totalPriceUSD + pickupFeeUSD)}</span>
+                    {totalPriceUSD + pickupFeeUSD > 0 ? (
+                      <span className="text-sunset text-xl font-bold font-display">{formatPrice(totalPriceUSD + pickupFeeUSD)}</span>
+                    ) : (
+                      <span className="text-gold text-sm font-medium">To be confirmed via WhatsApp</span>
+                    )}
                   </div>
                 </div>
               </div>

@@ -195,22 +195,12 @@ export function DestinationDetailClient({ destination: d }: Props) {
             <div className="glass-card rounded-2xl p-5 border-sunset/15">
               <h3 className="font-display text-lg text-cream mb-2">Visit {d.name}</h3>
               <p className="text-xs text-cream-muted mb-4">From ${d.estimatedBudget.min} per person · {d.duration}</p>
-              {primaryPackage ? (
-                <Link
-                  href={`/booking?package=${primaryPackage.slug}`}
-                  className="btn-primary w-full justify-center text-sm py-3"
-                >
-                  Book This Destination <ArrowRight className="w-4 h-4" />
-                </Link>
-              ) : (
-                <a
-                  href={`https://wa.me/6281234567890?text=Hi, I'd like to plan a trip to ${encodeURIComponent(d.name)}`}
-                  target="_blank"
-                  className="btn-primary w-full justify-center text-sm py-3 flex items-center gap-2"
-                >
-                  Plan Custom Trip <ArrowRight className="w-4 h-4" />
-                </a>
-              )}
+              <Link
+                href={`/booking?destination=${d.slug}&destinationName=${encodeURIComponent(d.name)}${primaryPackage ? `&suggest=${primaryPackage.slug}` : ''}`}
+                className="btn-primary w-full justify-center text-sm py-3"
+              >
+                Book This Destination <ArrowRight className="w-4 h-4" />
+              </Link>
               <Link href="/packages" className="btn-ghost w-full justify-center text-sm py-3 mt-2">
                 Browse All Packages
               </Link>
