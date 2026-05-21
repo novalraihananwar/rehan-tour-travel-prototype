@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Truck, MapPin, Phone, CheckCircle, AlertCircle,
-  Clock, Wrench, Navigation, Users, RefreshCw,
+  Clock, Wrench, Navigation, Users, RefreshCw, ExternalLink, Copy, Check as CheckIcon,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
 
@@ -52,6 +52,17 @@ export default function FleetPage() {
   const [searchQ, setSearchQ]           = useState('')
   const [view, setView]                 = useState<'map' | 'list'>('map')
   const [lastRefresh, setLastRefresh]   = useState(new Date())
+  const [copied, setCopied]             = useState(false)
+
+  const driverLoginUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/driver/login`
+    : '/driver/login'
+
+  const copyDriverLink = () => {
+    navigator.clipboard.writeText(driverLoginUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   // Fetch live drivers
   const fetchLive = async () => {
@@ -112,6 +123,16 @@ export default function FleetPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Driver portal shortcut */}
+          <a
+            href="/driver/login"
+            target="_blank"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-jungle/30 bg-jungle/10 text-jungle-light text-xs font-medium hover:bg-jungle/20 transition-colors"
+          >
+            <Truck className="w-3.5 h-3.5" />
+            Driver Portal
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </a>
           <button onClick={fetchLive} className="btn-ghost text-xs px-3 py-2 flex items-center gap-1.5">
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
@@ -144,6 +165,34 @@ export default function FleetPage() {
             <p className="text-xs text-cream-muted">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Driver login link card */}
+      <div className="glass-card rounded-2xl p-4 flex items-center gap-4 border-jungle/15">
+        <div className="w-9 h-9 rounded-xl bg-jungle/15 flex items-center justify-center shrink-0">
+          <Truck className="w-4 h-4 text-jungle-light" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-cream mb-0.5">Link Login Driver</p>
+          <p className="text-xs text-cream-muted font-mono truncate">{driverLoginUrl}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={copyDriverLink}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 text-xs text-cream-muted hover:text-cream hover:border-white/25 transition-colors"
+          >
+            {copied ? <CheckIcon className="w-3.5 h-3.5 text-jungle-light" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? 'Tersalin!' : 'Copy'}
+          </button>
+          <a
+            href="/driver/login"
+            target="_blank"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-jungle/15 border border-jungle/25 text-xs text-jungle-light hover:bg-jungle/25 transition-colors"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Buka
+          </a>
+        </div>
       </div>
 
       {view === 'map' ? (
