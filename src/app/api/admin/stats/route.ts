@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { tourPackages } from '@/lib/data'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Bookings stats

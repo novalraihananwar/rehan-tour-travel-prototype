@@ -144,7 +144,7 @@ export default function AdminOverview() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/admin/stats')
+        const res = await fetch('/api/admin/stats', { cache: 'no-store' })
         const data = await res.json()
         setStats(data)
       } catch { /* use mock data */ } finally {
