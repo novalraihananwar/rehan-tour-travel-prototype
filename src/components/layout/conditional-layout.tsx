@@ -6,13 +6,15 @@ import { FloatingWhatsApp } from './floating-whatsapp'
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname?.startsWith('/admin') ?? false
+  const isAdmin  = pathname?.startsWith('/admin')  ?? false
+  const isDriver = pathname?.startsWith('/driver')  ?? false
+  const hideChrome = isAdmin || isDriver
   return (
     <>
-      {!isAdmin && <Navbar />}
+      {!hideChrome && <Navbar />}
       {children}
-      {!isAdmin && <Footer />}
-      {!isAdmin && <FloatingWhatsApp />}
+      {!hideChrome && <Footer />}
+      {!hideChrome && <FloatingWhatsApp />}
     </>
   )
 }
