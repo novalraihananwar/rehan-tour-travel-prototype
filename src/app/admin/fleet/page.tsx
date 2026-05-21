@@ -115,7 +115,7 @@ export default function FleetPage() {
 
   useEffect(() => {
     fetchLive()
-    const interval = setInterval(fetchLive, 10000)
+    const interval = setInterval(fetchLive, 5000)
     return () => clearInterval(interval)
   }, [])
 
@@ -127,14 +127,13 @@ export default function FleetPage() {
     ch.bind('driver-update', (raw: Record<string, unknown>) => {
       setLiveDrivers(prev => {
         const idx = prev.findIndex(d => d.driverName === raw.driverName)
-        // Merge: keep existing trip counts, update position/status from Pusher
         const base = idx >= 0 ? prev[idx] : {} as LiveDriver
         const merged: LiveDriver = {
           ...base,
           driverName:  String(raw.driverName || base.driverName || ''),
           vehicle:     String(raw.vehicle     || base.vehicle     || ''),
-          lat:         Number(raw.lat  ?? base.lat),
-          lng:         Number(raw.lng  ?? base.lng),
+          lat:         Number(raw.lat  ?? base.lat  ?? 0),
+          lng:         Number(raw.lng  ?? base.lng  ?? 0),
           status:      String(raw.status      || base.status      || 'available'),
           bookingCode: (raw.bookingCode as string | null) ?? base.bookingCode ?? null,
           customerName: base.customerName ?? null,
@@ -147,6 +146,8 @@ export default function FleetPage() {
           tripsTotal:  base.tripsTotal  ?? 0,
         }
         if (idx >= 0) { const n = [...prev]; n[idx] = merged; return n }
+        // Driver baru muncul lewat Pusher — refresh API untuk dapat trip counts
+        fetchLive()
         return [...prev, merged]
       })
     })

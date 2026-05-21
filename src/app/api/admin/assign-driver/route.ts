@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     // If dispatching: notify driver via Pusher + WhatsApp to customer
     if (dispatch) {
-      // WhatsApp to customer
+      // WhatsApp to customer (non-blocking)
       if (booking.whatsapp) {
         sendWhatsApp(booking.whatsapp, msgDriverDispatched({
           customerName: booking.name,
@@ -52,19 +52,24 @@ export async function POST(req: NextRequest) {
         })).catch(() => {})
       }
 
-      const channel = driverChannel(driverName)
-      await pusherServer.trigger(channel, 'new-booking', {
-        bookingCode,
-        packageTitle:  booking.package_title,
-        customerName:  booking.name,
-        guests:        booking.guests,
-        pickupName:    booking.pickup_name || '',
-        pickupAddress: booking.pickup_address || '',
-        date:          booking.date || '',
-        pickupTime:    booking.pickup_time || '',
-        totalUsd:      booking.total_usd,
-        timestamp:     Date.now(),
-      })
+      // Pusher notify driver — wrapped so a Pusher failure never kills the response
+      try {
+        const channel = driverChannel(driverName)
+        await pusherServer.trigger(channel, 'new-booking', {
+          bookingCode,
+          packageTitle:  booking.package_title,
+          customerName:  booking.name,
+          guests:        booking.guests,
+          pickupName:    booking.pickup_name || '',
+          pickupAddress: booking.pickup_address || '',
+          date:          booking.date || '',
+          pickupTime:    booking.pickup_time || '',
+          totalUsd:      booking.total_usd,
+          timestamp:     Date.now(),
+        })
+      } catch (pusherErr) {
+        console.error('assign-driver pusher error (non-fatal):', pusherErr)
+      }
     }
 
     return NextResponse.json({ ok: true, status: newStatus, dispatched: !!dispatch })
