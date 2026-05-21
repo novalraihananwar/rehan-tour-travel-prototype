@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   User, Phone, Lock, Mail, CreditCard, ChevronRight, ChevronLeft,
-  Navigation, AlertCircle, CheckCircle2, Eye, EyeOff,
+  Navigation, AlertCircle, CheckCircle2, Eye, EyeOff, Camera,
 } from 'lucide-react'
 
 type FormData = {
@@ -18,9 +18,11 @@ type FormData = {
   username: string
   pin: string
   confirmPin: string
+  photoUrl: string
+  ktpPhotoUrl: string
 }
 
-const STEPS = ['Data Diri', 'Dokumen', 'Akun']
+const STEPS = ['Data Diri', 'Dokumen', 'Foto', 'Akun']
 
 export default function DriverRegisterPage() {
   const router = useRouter()
@@ -29,12 +31,18 @@ export default function DriverRegisterPage() {
     name: '', phone: '', email: '',
     ktpNumber: '', simNumber: '', simExpiry: '',
     username: '', pin: '', confirmPin: '',
+    photoUrl: '', ktpPhotoUrl: '',
   })
-  const [showPin, setShowPin]         = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [error, setError]             = useState('')
-  const [loading, setLoading]         = useState(false)
-  const [done, setDone]               = useState(false)
+  const [showPin, setShowPin]               = useState(false)
+  const [showConfirm, setShowConfirm]       = useState(false)
+  const [error, setError]                   = useState('')
+  const [loading, setLoading]               = useState(false)
+  const [done, setDone]                     = useState(false)
+  const [selfieFile, setSelfieFile]         = useState<File | null>(null)
+  const [selfiePreview, setSelfiePreview]   = useState<string | null>(null)
+  const [ktpFile, setKtpFile]               = useState<File | null>(null)
+  const [ktpPreview, setKtpPreview]         = useState<string | null>(null)
+  const [uploading, setUploading]           = useState(false)
 
   const set = (key: keyof FormData, value: string) => {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -73,6 +81,10 @@ export default function DriverRegisterPage() {
         return 'Masa berlaku SIM sudah kadaluarsa. SIM harus masih berlaku.'
     }
     if (step === 2) {
+      if (!selfieFile && !form.photoUrl) return 'Foto diri wajib diupload.'
+      if (!ktpFile && !form.ktpPhotoUrl) return 'Foto KTP wajib diupload.'
+    }
+    if (step === 3) {
       if (!form.username.trim()) return 'Username wajib diisi.'
       if (!/^[a-z][a-z0-9._]{2,29}$/.test(form.username))
         return 'Username: huruf kecil, angka, titik, underscore (3–30 karakter).'
@@ -95,29 +107,74 @@ export default function DriverRegisterPage() {
   const submit = async () => {
     const err = validateStep()
     if (err) { setError(err); return }
+    setUploading(true)
     setLoading(true)
     setError('')
+
     try {
+      let photoUrl = form.photoUrl
+      let ktpPhotoUrl = form.ktpPhotoUrl
+
+      if (selfieFile) {
+        const fd = new FormData()
+        fd.append('file', selfieFile)
+        fd.append('bucket', 'driver-photos')
+        fd.append('filename', `selfie-${form.username}-${Date.now()}.${selfieFile.name.split('.').pop()}`)
+        const res = await fetch('/api/driver/upload-photo', { method: 'POST', body: fd })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data.error || 'Gagal upload foto diri.')
+          setLoading(false)
+          setUploading(false)
+          return
+        }
+        photoUrl = data.url
+      }
+
+      if (ktpFile) {
+        const fd = new FormData()
+        fd.append('file', ktpFile)
+        fd.append('bucket', 'driver-documents')
+        fd.append('filename', `ktp-${form.username}-${Date.now()}.${ktpFile.name.split('.').pop()}`)
+        const res = await fetch('/api/driver/upload-photo', { method: 'POST', body: fd })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data.error || 'Gagal upload foto KTP.')
+          setLoading(false)
+          setUploading(false)
+          return
+        }
+        ktpPhotoUrl = data.url
+      }
+
       const res = await fetch('/api/driver/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name:       form.name.trim(),
-          phone:      form.phone.replace(/\s/g, ''),
-          email:      form.email.trim().toLowerCase(),
-          ktpNumber:  form.ktpNumber.replace(/\s/g, ''),
-          simNumber:  form.simNumber.trim(),
-          simExpiry:  form.simExpiry,
-          username:   form.username.trim(),
-          pin:        form.pin,
+          name:        form.name.trim(),
+          phone:       form.phone.replace(/\s/g, ''),
+          email:       form.email.trim().toLowerCase(),
+          ktpNumber:   form.ktpNumber.replace(/\s/g, ''),
+          simNumber:   form.simNumber.trim(),
+          simExpiry:   form.simExpiry,
+          username:    form.username.trim(),
+          pin:         form.pin,
+          photoUrl,
+          ktpPhotoUrl,
         }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Pendaftaran gagal.'); setLoading(false); return }
+      if (!res.ok) {
+        setError(data.error || 'Pendaftaran gagal.')
+        setLoading(false)
+        setUploading(false)
+        return
+      }
       setDone(true)
     } catch {
       setError('Koneksi gagal. Coba lagi.')
       setLoading(false)
+      setUploading(false)
     }
   }
 
@@ -273,9 +330,92 @@ export default function DriverRegisterPage() {
               </motion.div>
             )}
 
-            {/* Step 2 — Akun */}
+            {/* Step 2 — Foto */}
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-4">
+                <h2 className="text-xs text-cream-muted uppercase tracking-wider font-semibold mb-3">
+                  Foto Identitas
+                </h2>
+
+                {/* Selfie / Foto Diri */}
+                <div>
+                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-2">
+                    Foto Diri (Selfie) <span className="text-lava">*</span>
+                  </label>
+                  <p className="text-[11px] text-cream-muted mb-3">
+                    Wajah harus jelas, pencahayaan cukup. Foto ini akan ditampilkan ke pelanggan saat penjemputan.
+                  </p>
+                  {selfiePreview ? (
+                    <div className="relative">
+                      <img src={selfiePreview} alt="Selfie preview" className="w-full h-48 object-cover rounded-xl border border-white/10" />
+                      <button
+                        type="button"
+                        onClick={() => { setSelfieFile(null); setSelfiePreview(null); set('photoUrl', '') }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-lava/80 flex items-center justify-center text-white text-xs hover:bg-lava transition-colors"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center h-36 rounded-xl border-2 border-dashed border-white/15 hover:border-gold/40 transition-colors cursor-pointer bg-white/3 hover:bg-white/5">
+                      <Camera className="w-8 h-8 text-cream-muted mb-2" />
+                      <span className="text-xs text-cream-muted">Tap untuk upload foto diri</span>
+                      <span className="text-[10px] text-cream-muted/60 mt-1">JPG/PNG, max 5MB</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          setSelfieFile(file)
+                          setSelfiePreview(URL.createObjectURL(file))
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* KTP Photo */}
+                <div className="mt-4">
+                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-2">
+                    Foto KTP <span className="text-lava">*</span>
+                  </label>
+                  <p className="text-[11px] text-cream-muted mb-3">
+                    Foto KTP asli harus jelas terbaca. Digunakan untuk verifikasi identitas oleh admin.
+                  </p>
+                  {ktpPreview ? (
+                    <div className="relative">
+                      <img src={ktpPreview} alt="KTP preview" className="w-full h-40 object-cover rounded-xl border border-white/10" />
+                      <button
+                        type="button"
+                        onClick={() => { setKtpFile(null); setKtpPreview(null); set('ktpPhotoUrl', '') }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-lava/80 flex items-center justify-center text-white text-xs hover:bg-lava transition-colors"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-white/15 hover:border-gold/40 transition-colors cursor-pointer bg-white/3 hover:bg-white/5">
+                      <CreditCard className="w-7 h-7 text-cream-muted mb-2" />
+                      <span className="text-xs text-cream-muted">Tap untuk upload foto KTP</span>
+                      <span className="text-[10px] text-cream-muted/60 mt-1">JPG/PNG, max 5MB</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          setKtpFile(file)
+                          setKtpPreview(URL.createObjectURL(file))
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 3 — Akun */}
+            {step === 3 && (
+              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-4">
                 <h2 className="text-xs text-cream-muted uppercase tracking-wider font-semibold mb-3">Data Akun</h2>
 
                 <div>
@@ -352,7 +492,7 @@ export default function DriverRegisterPage() {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-volcanic/30 border-t-volcanic rounded-full animate-spin" />
-                    Mendaftar...
+                    {uploading ? 'Mengupload...' : 'Mendaftar...'}
                   </span>
                 ) : 'Kirim Pendaftaran'}
               </button>

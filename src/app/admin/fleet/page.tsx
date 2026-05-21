@@ -36,6 +36,7 @@ interface LiveDriver {
   tripsToday:  number
   tripsMonth:  number
   tripsTotal:  number
+  photoUrl:    string | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; bg: string; border: string }> = {
@@ -69,6 +70,7 @@ export default function FleetPage() {
   const [pendingDrivers, setPendingDrivers] = useState<Array<{
     id: string; username: string; name: string; phone: string
     vehicle_type: string | null; status: string; created_at: string
+    photo_url: string | null; ktp_photo_url: string | null
   }>>([])
   const [vehicleForm, setVehicleForm] = useState({ name: '', type: '', plate: '', capacity: 4, notes: '' })
   const [showVehicleForm, setShowVehicleForm] = useState(false)
@@ -144,6 +146,7 @@ export default function FleetPage() {
           tripsToday:  base.tripsToday  ?? 0,
           tripsMonth:  base.tripsMonth  ?? 0,
           tripsTotal:  base.tripsTotal  ?? 0,
+          photoUrl:    base.photoUrl    ?? null,
         }
         if (idx >= 0) { const n = [...prev]; n[idx] = merged; return n }
         // Driver baru muncul lewat Pusher — refresh API untuk dapat trip counts
@@ -342,8 +345,12 @@ export default function FleetPage() {
 
                     <div className="p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-9 h-9 rounded-xl bg-volcanic-400 flex items-center justify-center shrink-0">
-                          <Truck className="w-4 h-4 text-cream-muted" />
+                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-sunset/80 to-gold/80 flex items-center justify-center">
+                          {d.photoUrl ? (
+                            <img src={d.photoUrl} alt={d.driverName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-volcanic font-bold text-sm">{d.driverName[0]?.toUpperCase()}</span>
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-cream truncate">{d.driverName}</p>
@@ -602,8 +609,12 @@ export default function FleetPage() {
                 <div key={d.id} className="glass-card rounded-2xl p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sunset/60 to-gold/60 flex items-center justify-center text-volcanic font-bold text-sm shrink-0">
-                        {d.name[0]?.toUpperCase()}
+                      <div className="w-10 h-10 rounded-full overflow-hidden border border-sunset/30 shrink-0 bg-gradient-to-br from-sunset/60 to-gold/60 flex items-center justify-center">
+                        {d.photo_url ? (
+                          <img src={d.photo_url} alt={d.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-volcanic font-bold text-sm">{d.name[0]?.toUpperCase()}</span>
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-cream">{d.name}</p>
@@ -612,6 +623,12 @@ export default function FleetPage() {
                         <p className="text-[11px] text-cream-muted mt-0.5">
                           Daftar: {new Date(d.created_at).toLocaleDateString('id-ID')}
                         </p>
+                        {d.ktp_photo_url && (
+                          <a href={d.ktp_photo_url} target="_blank" rel="noopener noreferrer"
+                            className="text-[11px] text-ocean-light hover:underline">
+                            Lihat Foto KTP →
+                          </a>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
@@ -674,8 +691,12 @@ export default function FleetPage() {
               const cfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.offline
               return (
                 <div key={`${d.driverName}-${d.vehicle}`} className="flex items-center gap-4 px-5 py-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sunset/80 to-gold/80 flex items-center justify-center text-volcanic font-bold text-sm shrink-0">
-                    {d.driverName[0]?.toUpperCase()}
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-sunset/80 to-gold/80 flex items-center justify-center">
+                    {d.photoUrl ? (
+                      <img src={d.photoUrl} alt={d.driverName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-volcanic">{d.driverName[0]?.toUpperCase()}</span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-cream">{d.driverName}</p>

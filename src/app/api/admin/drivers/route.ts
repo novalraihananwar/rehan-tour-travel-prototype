@@ -60,6 +60,17 @@ export async function GET() {
       if (row.recorded_at >= todayISO) tripMap[name].today.add(row.booking_code)
     }
 
+    // Fetch photo URLs from drivers table
+    const driverNames = latest.map(r => r.driver_name).filter(Boolean) as string[]
+    const { data: driverProfiles } = driverNames.length
+      ? await supabase.from('drivers').select('name, photo_url').in('name', driverNames)
+      : { data: [] }
+
+    const photoMap: Record<string, string | null> = {}
+    for (const p of (driverProfiles || [])) {
+      if (p.name) photoMap[p.name] = p.photo_url ?? null
+    }
+
     const drivers = latest.map(row => {
       const counts = tripMap[row.driver_name] || { today: new Set(), month: new Set(), total: new Set() }
       return {
@@ -77,6 +88,7 @@ export async function GET() {
         tripsToday:  counts.today.size,
         tripsMonth:  counts.month.size,
         tripsTotal:  counts.total.size,
+        photoUrl:    photoMap[row.driver_name] ?? null,
       }
     })
 

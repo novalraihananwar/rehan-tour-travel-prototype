@@ -53,7 +53,7 @@ export default function DriverLoginPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-sm relative z-10"
       >
         {/* Logo */}
         <div className="text-center mb-8">
@@ -146,7 +146,12 @@ export default function DriverLoginPage() {
         </p>
 
         <p className="text-center text-xs text-cream-muted mt-2">
-          Lupa PIN? Hubungi admin Rehan Tour &amp; Travel
+          <button
+            onClick={() => router.push('/driver/forgot-pin')}
+            className="text-cream-muted hover:text-gold transition-colors hover:underline"
+          >
+            Lupa PIN?
+          </button>
         </p>
 
         <p className="text-center text-xs text-cream-muted mt-3">

@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from('drivers')
-      .select('id, username, name, phone, vehicle_type, vehicle_plate, created_at, status')
+      .select('id, username, name, phone, vehicle_type, vehicle_plate, created_at, status, photo_url, ktp_photo_url')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
 

@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, email, ktpNumber, simNumber, simExpiry, username, pin } = await req.json()
+    const { name, phone, email, ktpNumber, simNumber, simExpiry, username, pin, photoUrl, ktpPhotoUrl } = await req.json()
 
     if (!name || !phone || !email || !ktpNumber || !simNumber || !simExpiry || !username || !pin) {
       return NextResponse.json({ error: 'Semua field wajib diisi.' }, { status: 400 })
@@ -51,10 +51,12 @@ export async function POST(req: NextRequest) {
       sim_number:  simNumber,
       sim_expiry:  simExpiry,
       username,
-      pin_hash:    pin,
-      vehicle_id:  null,
-      is_active:   false,
-      status:      'pending',
+      pin_hash:      pin,
+      vehicle_id:    null,
+      is_active:     false,
+      status:        'pending',
+      photo_url:     photoUrl || null,
+      ktp_photo_url: ktpPhotoUrl || null,
     })
 
     if (insertError) {

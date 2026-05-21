@@ -9,6 +9,7 @@ import {
   Star, Share2, Calendar, Users, Copy, Check,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
+import { supabase } from '@/lib/supabase'
 
 const MapView = dynamic(() => import('./map-view'), { ssr: false, loading: () => (
   <div className="w-full h-full bg-volcanic-200 flex items-center justify-center rounded-2xl">
@@ -51,14 +52,16 @@ export function BookingTrackerClient({ code }: { code: string }) {
   const [connected, setConnected]   = useState(false)
   const [copied, setCopied]         = useState(false)
   const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null)
+  const [driverPhoto, setDriverPhoto] = useState<string | null>(null)
   const channelRef = useRef<{ unbind_all: () => void } | null>(null)
 
-  // Load booking details
+  // Load booking details + driver photo
   useEffect(() => {
     fetch(`/api/bookings?code=${code}`, { cache: 'no-store' })
       .then(r => r.json())
-      .then(data => {
-        if (data) setBookingInfo({
+      .then(async (data) => {
+        if (!data) return
+        setBookingInfo({
           packageTitle: data.package_title || '',
           date:         data.date || '',
           pickupTime:   data.pickup_time || '',
@@ -67,6 +70,14 @@ export function BookingTrackerClient({ code }: { code: string }) {
           driverName:   data.driver_name || null,
           status:       data.status || 'pending',
         })
+        if (data.driver_name) {
+          const { data: driverProfile } = await supabase
+            .from('drivers')
+            .select('photo_url')
+            .eq('name', data.driver_name)
+            .maybeSingle()
+          setDriverPhoto(driverProfile?.photo_url ?? null)
+        }
       })
       .catch(() => {})
   }, [code])
@@ -186,8 +197,14 @@ export function BookingTrackerClient({ code }: { code: string }) {
                   animate={{ opacity: 1, y: 0 }}
                   className="glass-card rounded-2xl p-5 flex items-center gap-4"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sunset to-gold flex items-center justify-center text-volcanic font-bold text-lg font-display shrink-0">
-                    {(location?.driverName || bookingInfo?.driverName || '?')[0].toUpperCase()}
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-sunset/40 shrink-0 bg-gradient-to-br from-sunset/50 to-gold/50 flex items-center justify-center">
+                    {driverPhoto ? (
+                      <img src={driverPhoto} alt={location?.driverName || bookingInfo?.driverName || ''} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-volcanic font-bold text-lg font-display">
+                        {(location?.driverName || bookingInfo?.driverName || '?')[0].toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-cream">{location?.driverName || bookingInfo?.driverName}</p>
