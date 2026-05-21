@@ -8,7 +8,6 @@ import {
   Truck, MapPin, Phone, CheckCircle, AlertCircle,
   Clock, Wrench, Navigation, Users, RefreshCw,
 } from 'lucide-react'
-import { fleetVehicles } from '@/lib/data'
 import { getPusherClient } from '@/lib/pusher-client'
 
 const AdminDriverMap = dynamic(() => import('@/components/ui/admin-driver-map'), {
@@ -46,22 +45,6 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; 
   arrived:      { label: 'Di Lokasi',    dot: 'bg-purple-400',   text: 'text-purple-300',   bg: 'bg-purple-900/20', border: 'border-purple-500/30' },
   offline:      { label: 'Offline',      dot: 'bg-cream-muted',  text: 'text-cream-muted',  bg: 'bg-white/8',    border: 'border-white/12' },
 }
-
-const extendedFleet = [
-  ...fleetVehicles,
-  ...Array.from({ length: 22 }, (_, i) => ({
-    id: `RTT-${String(i + 9).padStart(3, '0')}`,
-    plateNumber: i < 11 ? `L ${8009 + i} RTT` : `DK ${8001 + (i - 11)} RTT`,
-    model: i % 3 === 0 ? 'Toyota HiAce Premio 2022' : 'Toyota HiAce Commuter 2023',
-    capacity: i % 3 === 0 ? 11 : 13,
-    driver: ['Andi Wijaya', 'Slamet Riyadi', 'Bagas Prabowo', 'Fajar Nugroho', 'Hendri Saputra', 'Irfan Maulana', 'Joko Santoso', 'Kukuh Prasetyo', 'Lukman Hakim', 'Mulyadi Susanto', 'Niko Firmansyah', 'Otto Kurniawan', 'Putu Agus', 'Raka Sanjaya', 'Satria Kusuma', 'Tomi Wibowo', 'Umar Basri', 'Vino Ramadhan', 'Widi Santoso', 'Xander Pratama', 'Yogi Haryanto', 'Zaki Firdaus'][i],
-    driverPhone: `+62812-${String(4567890 + i).substring(0, 7)}`,
-    status: (['Available', 'Available', 'On Trip', 'Standby', 'Available', 'Fully Booked', 'Available', 'On Trip', 'Available', 'Available', 'Standby', 'Available', 'On Trip', 'Available', 'Available', 'Fully Booked', 'Available', 'On Trip', 'Available', 'Maintenance', 'Available', 'Standby'] as const)[i],
-    occupancy: i % 3 === 2 ? ((i * 7 + 3) % 8) + 4 : 0,
-    totalTrips: ((i * 31 + 47) % 300) + 50,
-    currentRoute: i % 3 === 2 ? ['Malang → Bromo', 'Bali Circuit', 'Surabaya → Ijen'][i % 3] : undefined,
-  }))
-]
 
 export default function FleetPage() {
   const [liveDrivers, setLiveDrivers]   = useState<LiveDriver[]>([])
@@ -103,17 +86,21 @@ export default function FleetPage() {
 
   const statuses = ['All', 'Available', 'On Trip', 'Standby', 'Maintenance', 'Fully Booked']
 
-  const filteredFleet = extendedFleet.filter(v => {
-    const matchStatus = filterStatus === 'All' || v.status === filterStatus
-    const matchSearch = !searchQ || v.driver.toLowerCase().includes(searchQ.toLowerCase()) || v.id.toLowerCase().includes(searchQ.toLowerCase())
+  const statuses = ['All', 'available', 'on-trip', 'en-route', 'arrived', 'standby', 'offline']
+
+  const filteredDrivers = liveDrivers.filter(d => {
+    const matchStatus = filterStatus === 'All' || d.status === filterStatus
+    const matchSearch = !searchQ ||
+      d.driverName.toLowerCase().includes(searchQ.toLowerCase()) ||
+      d.vehicle.toLowerCase().includes(searchQ.toLowerCase())
     return matchStatus && matchSearch
   })
 
   const counts = {
-    available: extendedFleet.filter(v => v.status === 'Available').length,
-    onTrip:    extendedFleet.filter(v => v.status === 'On Trip').length,
-    standby:   extendedFleet.filter(v => v.status === 'Standby').length,
-    maintenance: extendedFleet.filter(v => v.status === 'Maintenance').length,
+    available:   liveDrivers.filter(d => ['available', 'standby'].includes(d.status)).length,
+    onTrip:      liveDrivers.filter(d => ['on-trip', 'en-route', 'arrived'].includes(d.status)).length,
+    standby:     liveDrivers.filter(d => d.status === 'standby').length,
+    maintenance: 0,
   }
 
   return (
@@ -123,7 +110,7 @@ export default function FleetPage() {
         <div>
           <h1 className="font-display text-2xl text-cream">Fleet & Drivers</h1>
           <p className="text-sm text-cream-muted mt-0.5">
-            {liveDrivers.length} driver live · {extendedFleet.length} kendaraan terdaftar
+            {liveDrivers.length} driver online · real-time dari Supabase
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -207,95 +194,92 @@ export default function FleetPage() {
             </div>
           </div>
 
-          <p className="text-xs text-cream-muted">{filteredFleet.length} kendaraan</p>
+          <p className="text-xs text-cream-muted">{filteredDrivers.length} driver online</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredFleet.map((v, i) => {
-              const cfg  = STATUS_CONFIG[v.status] || STATUS_CONFIG.offline
-              // Check if driver has live GPS
-              const live = liveDrivers.find(d => d.vehicle === v.id || d.driverName?.toLowerCase().includes(v.driver?.split(' ')[0]?.toLowerCase() || ''))
-              return (
-                <motion.div
-                  key={v.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="glass-card rounded-2xl overflow-hidden hover:border-sunset/20 transition-all"
-                >
-                  {/* Status header */}
-                  <div className={`px-4 py-2.5 flex items-center justify-between border-b border-white/5 ${cfg.bg}`}>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${cfg.dot} ${v.status === 'On Trip' ? 'animate-pulse' : ''}`} />
-                      <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs text-cream-muted">{v.id}</span>
-                      {live && (
+          {filteredDrivers.length === 0 ? (
+            <div className="glass-card rounded-2xl py-16 text-center text-cream-muted text-sm">
+              {liveDrivers.length === 0
+                ? 'Belum ada driver online. Driver yang aktif GPS akan muncul di sini.'
+                : 'Tidak ada driver yang cocok dengan filter.'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredDrivers.map((d, i) => {
+                const cfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.offline
+                const isActive = ['on-trip', 'en-route', 'arrived'].includes(d.status)
+                return (
+                  <motion.div
+                    key={d.driverName}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="glass-card rounded-2xl overflow-hidden hover:border-sunset/20 transition-all"
+                  >
+                    <div className={`px-4 py-2.5 flex items-center justify-between border-b border-white/5 ${cfg.bg}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${cfg.dot} ${isActive ? 'animate-pulse' : ''}`} />
+                        <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs text-cream-muted">{d.vehicle}</span>
                         <span className="text-xs text-jungle-light bg-jungle/20 px-1.5 py-0.5 rounded-full">GPS</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-9 h-9 rounded-xl bg-volcanic-400 flex items-center justify-center shrink-0">
-                        <Truck className="w-4 h-4 text-cream-muted" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-cream truncate">{v.driver}</p>
-                        <p className="text-xs text-cream-muted font-mono">{(v as { plateNumber: string }).plateNumber}</p>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 text-xs text-cream-muted mb-3">
-                      <div className="flex justify-between">
-                        <span>Kapasitas</span>
-                        <span className="text-cream">{v.capacity} pax</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Total trips</span>
-                        <span className="text-cream">{v.totalTrips}</span>
-                      </div>
-                      {(v as { currentRoute?: string }).currentRoute && (
-                        <div className="flex items-center gap-1 text-sunset">
-                          <Navigation className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{(v as { currentRoute?: string }).currentRoute}</span>
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-9 h-9 rounded-xl bg-volcanic-400 flex items-center justify-center shrink-0">
+                          <Truck className="w-4 h-4 text-cream-muted" />
                         </div>
-                      )}
-                      {live && (
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-cream truncate">{d.driverName}</p>
+                          <p className="text-xs text-cream-muted">
+                            Updated {new Date(d.updatedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 text-xs text-cream-muted mb-3">
                         <div className="flex items-center gap-1 text-jungle-light">
                           <MapPin className="w-3 h-3 shrink-0" />
-                          <span>Live: {live.lat.toFixed(3)}, {live.lng.toFixed(3)}</span>
+                          <span>{d.lat.toFixed(4)}, {d.lng.toFixed(4)}</span>
                         </div>
-                      )}
-                    </div>
+                        {d.bookingCode && d.bookingCode !== 'STANDBY' && (
+                          <div className="flex items-center gap-1 text-sunset">
+                            <Navigation className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{d.bookingCode}</span>
+                          </div>
+                        )}
+                        {d.customerName && (
+                          <div className="flex justify-between">
+                            <span>Penumpang</span>
+                            <span className="text-cream">{d.customerName}</span>
+                          </div>
+                        )}
+                        {d.pickupName && (
+                          <div className="flex justify-between">
+                            <span>Pickup</span>
+                            <span className="text-cream truncate max-w-[100px]">{d.pickupName}</span>
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="flex gap-2">
-                      {(v as { driverPhone: string }).driverPhone && (
-                        <a
-                          href={`tel:${(v as { driverPhone: string }).driverPhone}`}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-jungle/25 bg-jungle/10 text-jungle-light text-xs hover:bg-jungle/20 transition-colors"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          Call
-                        </a>
-                      )}
-                      {live?.bookingCode && (
+                      {d.bookingCode && d.bookingCode !== 'STANDBY' && (
                         <Link
-                          href={`/booking/${live.bookingCode}`}
+                          href={`/booking/${d.bookingCode}`}
                           target="_blank"
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-sunset/25 bg-sunset/10 text-sunset text-xs hover:bg-sunset/20 transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-sunset/25 bg-sunset/10 text-sunset text-xs hover:bg-sunset/20 transition-colors"
                         >
                           <Navigation className="w-3.5 h-3.5" />
-                          Track
+                          Track Booking
                         </Link>
                       )}
                     </div>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 

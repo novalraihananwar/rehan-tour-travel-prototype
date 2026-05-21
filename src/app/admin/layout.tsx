@@ -9,26 +9,25 @@ import {
   Star, LogOut, Menu, X, ChevronRight, Bell, Search,
 } from 'lucide-react'
 
-const navItems = [
-  { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
-  { href: '/admin/bookings', label: 'Bookings', icon: BookOpen, badge: '12' },
-  { href: '/admin/fleet', label: 'Fleet & Drivers', icon: Truck },
-  { href: '/admin/packages', label: 'Packages', icon: Package },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
-  { href: '/admin/reviews', label: 'Reviews', icon: Star, badge: '3' },
+const NAV_BASE = [
+  { href: '/admin',           label: 'Overview',        icon: LayoutDashboard, exact: true },
+  { href: '/admin/bookings',  label: 'Bookings',        icon: BookOpen },
+  { href: '/admin/fleet',     label: 'Fleet & Drivers', icon: Truck },
+  { href: '/admin/packages',  label: 'Packages',        icon: Package },
+  { href: '/admin/analytics', label: 'Analytics',       icon: BarChart2 },
+  { href: '/admin/reviews',   label: 'Reviews',         icon: Star },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isAuth, setIsAuth] = useState<boolean | null>(null)
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [isAuth, setIsAuth]             = useState<boolean | null>(null)
+  const [newBookings, setNewBookings]   = useState(0)
 
+  // Auth check
   useEffect(() => {
-    if (pathname === '/admin/login') {
-      setIsAuth(true)
-      return
-    }
+    if (pathname === '/admin/login') { setIsAuth(true); return }
     if (typeof window !== 'undefined') {
       if (localStorage.getItem('admin_auth') !== 'true') {
         router.replace('/admin/login')
@@ -37,6 +36,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     }
   }, [pathname, router])
+
+  // Booking badge — shows new bookings since last visit to /admin/bookings
+  useEffect(() => {
+    if (!isAuth) return
+    const computeBadge = async () => {
+      try {
+        const res  = await fetch('/api/admin/stats', { cache: 'no-store' })
+        const data = await res.json()
+        const seen = parseInt(localStorage.getItem('admin_seen_bookings') || '0')
+        setNewBookings(Math.max(0, (data.totalBookings || 0) - seen))
+      } catch {}
+    }
+    computeBadge()
+    const interval = setInterval(computeBadge, 15000)
+    return () => clearInterval(interval)
+  }, [isAuth])
+
+  // Clear badge when visiting bookings page
+  useEffect(() => {
+    if (pathname === '/admin/bookings') {
+      fetch('/api/admin/stats', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+          localStorage.setItem('admin_seen_bookings', String(data.totalBookings || 0))
+          setNewBookings(0)
+        })
+        .catch(() => {})
+    }
+  }, [pathname])
 
   const handleLogout = () => {
     localStorage.removeItem('admin_auth')
@@ -79,8 +107,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           <p className="text-xs text-cream-muted uppercase tracking-widest px-3 mb-3">Management</p>
-          {navItems.map((item) => {
+          {NAV_BASE.map((item) => {
             const active = isActive(item.href, item.exact)
+            const badge  = item.href === '/admin/bookings' && newBookings > 0 ? String(newBookings) : undefined
             return (
               <Link
                 key={item.href}
@@ -93,9 +122,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <item.icon className={`w-4 h-4 shrink-0 ${active ? 'text-sunset' : 'text-cream-muted group-hover:text-cream'}`} />
                 <span className="flex-1">{item.label}</span>
-                {item.badge && (
-                  <span className="text-xs bg-sunset/20 text-sunset px-1.5 py-0.5 rounded-full font-medium">
-                    {item.badge}
+                {badge && (
+                  <span className="text-xs bg-sunset text-volcanic px-1.5 py-0.5 rounded-full font-bold animate-pulse">
+                    {badge}
                   </span>
                 )}
                 {active && <ChevronRight className="w-3 h-3 text-sunset" />}
@@ -159,8 +188,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </button>
               </div>
               <nav className="flex-1 px-3 py-4 space-y-1">
-                {navItems.map((item) => {
+                {NAV_BASE.map((item) => {
                   const active = isActive(item.href, item.exact)
+                  const badge  = item.href === '/admin/bookings' && newBookings > 0 ? String(newBookings) : undefined
                   return (
                     <Link
                       key={item.href}
@@ -172,7 +202,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     >
                       <item.icon className="w-4 h-4 shrink-0" />
                       <span className="flex-1">{item.label}</span>
-                      {item.badge && <span className="text-xs bg-sunset/20 text-sunset px-1.5 py-0.5 rounded-full">{item.badge}</span>}
+                      {badge && <span className="text-xs bg-sunset text-volcanic px-1.5 py-0.5 rounded-full font-bold">{badge}</span>}
                     </Link>
                   )
                 })}
