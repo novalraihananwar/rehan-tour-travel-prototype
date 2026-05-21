@@ -32,14 +32,11 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
   switch (sheet) {
 
     case 'penjualan': {
-      const { data: bookings, error: bErr, count } = await supabase
+      const { data: bookings } = await supabase
         .from('bookings')
-        .select('*', { count: 'exact' })
+        .select('*')
         .order('created_at', { ascending: false })
         .range(0, 999)
-
-      if (bErr) console.error('[sheets-csv] penjualan error:', bErr.message)
-      console.log('[sheets-csv] penjualan fetched:', bookings?.length, '/ count:', count)
 
       const headers = ['Kode', 'Tanggal', 'Jam', 'Nama Tamu', 'Paket', 'Tamu (pax)', 'Pickup', 'Total USD', 'Metode Bayar', 'Status']
       const rows = (bookings || []).map(b => [
@@ -61,7 +58,7 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
     }
 
     case 'rekap-paket': {
-      const { data: bookings } = await supabase.from('bookings').select('package_title, total_usd, status')
+      const { data: bookings } = await supabase.from('bookings').select('package_title, total_usd, status').range(0, 999)
 
       const stats: Record<string, { count: number; revenue: number }> = {}
       ;(bookings || []).forEach(b => {
@@ -112,6 +109,7 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
         .select('driver_name, booking_code, recorded_at')
         .neq('booking_code', 'STANDBY')
         .not('booking_code', 'is', null)
+        .range(0, 9999)
 
       const tripMap: Record<string, { today: Set<string>; month: Set<string>; total: Set<string> }> = {}
       for (const row of (tripRows || [])) {
@@ -145,7 +143,7 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
     }
 
     case 'ringkasan': {
-      const { data: bookings } = await supabase.from('bookings').select('total_usd, status, created_at, guests')
+      const { data: bookings } = await supabase.from('bookings').select('total_usd, status, created_at, guests').range(0, 999)
 
       const wibMidnight = new Date(Date.now() + WIB)
       wibMidnight.setUTCHours(0, 0, 0, 0)
