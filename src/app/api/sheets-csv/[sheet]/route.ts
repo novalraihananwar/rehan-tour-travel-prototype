@@ -32,10 +32,14 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
   switch (sheet) {
 
     case 'penjualan': {
-      const { data: bookings } = await supabase
+      const { data: bookings, error: bErr, count } = await supabase
         .from('bookings')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
+        .range(0, 999)
+
+      if (bErr) console.error('[sheets-csv] penjualan error:', bErr.message)
+      console.log('[sheets-csv] penjualan fetched:', bookings?.length, '/ count:', count)
 
       const headers = ['Kode', 'Tanggal', 'Jam', 'Nama Tamu', 'Paket', 'Tamu (pax)', 'Pickup', 'Total USD', 'Metode Bayar', 'Status']
       const rows = (bookings || []).map(b => [
