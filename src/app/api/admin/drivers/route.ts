@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const supabase = getSupabaseAdmin()
   try {
     // Latest location per driver (last 30 min)
     const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
@@ -25,6 +26,14 @@ export async function GET() {
     })
 
     // Trip counts — distinct booking codes per driver (excluding STANDBY)
+    //
+    // BUG-8: Penjelasan WIB timezone logic
+    // Supabase menyimpan timestamp dalam UTC. Agar batas hari dan bulan
+    // dihitung berdasarkan waktu Indonesia (WIB = UTC+7), caranya:
+    //   1. Tambahkan WIB offset ke Date.now() agar "seolah-olah" berada di UTC+7.
+    //   2. Set jam ke 00:00:00 UTC pada Date yang sudah di-shift (= tengah malam WIB).
+    //   3. Kurangi WIB offset lagi untuk mendapat timestamp UTC yang setara
+    //      dengan tengah malam WIB — inilah nilai yang dibandingkan dengan kolom UTC Supabase.
     const WIB = 7 * 60 * 60 * 1000
     const todayWIB = new Date(Date.now() + WIB)
     todayWIB.setUTCHours(0, 0, 0, 0)

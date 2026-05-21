@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { tourPackages } from '@/lib/data'
 
 // WIB = UTC+7
@@ -24,6 +24,7 @@ function toCsv(headers: string[], rows: (string | number | null | undefined)[][]
 }
 
 export async function GET(req: NextRequest, { params }: { params: { sheet: string } }) {
+  const supabase = getSupabaseAdmin()
   const { sheet } = params
 
   switch (sheet) {

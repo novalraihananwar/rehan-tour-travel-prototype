@@ -47,8 +47,9 @@ function parseArr(v: unknown): string[] {
 }
 
 function pkgPrice(p: Package) {
-  if (p.price_usd) return p.price_usd
-  if (p.price?.usd) return p.price.usd
+  // BUG-5: prioritaskan price_usd, fallback ke price.usd
+  if (p.price_usd !== undefined && p.price_usd !== null) return p.price_usd
+  if (p.price?.usd !== undefined && p.price?.usd !== null) return p.price.usd
   return 0
 }
 function pkgSeats(p: Package) { return p.available_seats ?? p.availableSeats ?? 0 }
@@ -84,27 +85,35 @@ export default function AdminPackagesPage() {
   useEffect(() => { fetchPackages() }, [])
 
   const handleToggleActive = async (pkg: Package) => {
+    // BUG-1: optimistic update dengan rollback jika PATCH gagal
     const newVal = !pkg.is_active
     setPackages(prev => prev.map(p => p.slug === pkg.slug ? { ...p, is_active: newVal } : p))
-    await fetch('/api/packages', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: pkg.slug, isActive: newVal }),
-    })
+    try {
+      const res = await fetch('/api/packages', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: pkg.slug, isActive: newVal }),
+      })
+      if (!res.ok) throw new Error('PATCH failed')
+    } catch {
+      // Rollback ke nilai semula
+      setPackages(prev => prev.map(p => p.slug === pkg.slug ? { ...p, is_active: pkg.is_active } : p))
+    }
   }
 
   const handleSaveEdit = async () => {
     if (!editPkg) return
     setSaving(true)
     try {
-      await fetch('/api/packages', {
+      // BUG-5: selalu kirim price_usd via priceUsd (normalisasi field naming)
+      const res = await fetch('/api/packages', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug:            editPkg.slug,
           title:           editPkg.title,
           subtitle:        editPkg.subtitle,
-          priceUsd:        pkgPrice(editPkg),
+          priceUsd:        editPkg.price_usd ?? pkgPrice(editPkg),
           type:            editPkg.type,
           duration:        editPkg.duration,
           availableSeats:  pkgSeats(editPkg),
@@ -117,6 +126,7 @@ export default function AdminPackagesPage() {
           isActive:        editPkg.is_active,
         }),
       })
+      if (!res.ok) throw new Error('PATCH failed')
       await fetchPackages()
       setSaveMsg('Tersimpan!')
       setTimeout(() => { setSaveMsg(''); setEditPkg(null) }, 1500)
@@ -236,15 +246,18 @@ export default function AdminPackagesPage() {
 
                 <div className="flex items-center justify-between pt-3 border-t border-white/5">
                   <span className="font-display text-xl font-bold text-gradient-sunset">
-                    ${pkgPrice(pkg)}
-                    <span className="text-xs text-cream-muted font-sans font-normal ml-1">/person</span>
+                    {/* BUG-2: tampilkan — jika harga 0 (tidak ada data harga) */}
+                    {pkgPrice(pkg) === 0 ? '—' : `$${pkgPrice(pkg)}`}
+                    {pkgPrice(pkg) !== 0 && (
+                      <span className="text-xs text-cream-muted font-sans font-normal ml-1">/person</span>
+                    )}
                   </span>
                   <div className="flex gap-2">
                     <Link href={`/packages/${pkg.slug}`} target="_blank" className="p-1.5 rounded-lg hover:bg-white/5 text-cream-muted hover:text-cream transition-colors">
                       <ExternalLink className="w-4 h-4" />
                     </Link>
                     <button
-                      onClick={() => setEditPkg(pkg)}
+                      onClick={() => { setSaveMsg(''); setEditPkg(pkg) }}
                       className="p-1.5 rounded-lg hover:bg-sunset/10 text-cream-muted hover:text-sunset transition-colors"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -469,7 +482,8 @@ function AddPackageForm({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.title || !form.slug || !form.priceUsd) {
+    // BUG-3: validasi yang benar — tidak blokir harga $0 yang valid
+    if (!form.title || !form.slug || form.priceUsd === undefined || form.priceUsd === null || form.priceUsd < 0) {
       setError('Judul, slug, dan harga wajib diisi.')
       return
     }

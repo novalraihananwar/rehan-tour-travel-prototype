@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   Search, Download, Eye, Check, X, MessageCircle, Loader2,
@@ -39,7 +39,7 @@ function capitalize(s: string) {
 
 function derivePaid(status: string, total: number): number {
   const s = status?.toLowerCase()
-  if (s === 'confirmed') return total
+  if (s === 'confirmed' || s === 'assigned' || s === 'dispatched') return total
   if (s === 'partial') return Math.round(total / 2)
   return 0
 }
@@ -113,8 +113,11 @@ function AssignModal({ booking, drivers, onAssign, onClose }: AssignModalProps) 
     const chosen = driversWithDist.find(d => d.driverName === selectedDriver) || recommended
     if (!chosen) return
     setAssigning(true)
-    await onAssign(chosen.driverName, chosen.vehicle, dispatch)
-    setAssigning(false)
+    try {
+      await onAssign(chosen.driverName, chosen.vehicle, dispatch)
+    } finally {
+      setAssigning(false)
+    }
   }
 
   return (
@@ -275,25 +278,58 @@ export default function BookingsPage() {
 
   const openAssignModal = async (booking: Booking) => {
     setAssignTarget(booking)
-    const res = await fetch('/api/admin/drivers', { cache: 'no-store' })
-    const data = await res.json()
-    setAvailDrivers(data)
+    try {
+      const res = await fetch('/api/admin/drivers', { cache: 'no-store' })
+      const data = await res.json()
+      setAvailDrivers(data)
+    } catch {
+      setAvailDrivers([])
+    }
   }
 
   const handleAssign = async (driverName: string, vehicle: string, dispatch: boolean) => {
     if (!assignTarget) return
-    await fetch('/api/admin/assign-driver', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bookingCode: assignTarget.code,
-        driverName, vehicle, dispatch,
-      }),
-    })
-    setAssignTarget(null)
-    // Refresh list
-    const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
-    if (data) setBookings(data.map(mapRow))
+    try {
+      const res = await fetch('/api/admin/assign-driver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingCode: assignTarget.code,
+          driverName, driverVehicle: vehicle, dispatch,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Server error ${res.status}`)
+      }
+      setAssignTarget(null)
+      // Refresh list
+      const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
+      if (data) setBookings(data.map(mapRow))
+    } catch (err) {
+      alert(`Gagal assign driver: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      // Do NOT close modal on error
+    }
+  }
+
+  const exportCSV = () => {
+    const header = ['Code', 'Name', 'Date', 'Destination', 'Status', 'Total']
+    const rows = filtered.map(b => [
+      b.code,
+      `"${b.name.replace(/"/g, '""')}"`,
+      b.date,
+      `"${b.package.replace(/"/g, '""')}"`,
+      b.status,
+      b.total,
+    ])
+    const csv = [header, ...rows].map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `bookings-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const statuses = ['All', 'Confirmed', 'Pending', 'Assigned', 'Dispatched', 'Partial', 'Cancelled']
@@ -307,7 +343,8 @@ export default function BookingsPage() {
     return matchSearch && matchStatus
   })
 
-  const totalRevenue = filtered.reduce((sum, b) => sum + b.paid, 0)
+  const totalRevenue = filtered.reduce((sum, b) => sum + b.total, 0)
+  const totalReceived = filtered.reduce((sum, b) => sum + b.paid, 0)
   const totalGuests  = filtered.reduce((sum, b) => sum + b.guests, 0)
   const tomorrowUnassigned = bookings.filter(b => isTomorrow(b.date) && !b.driverName && b.status !== 'Cancelled').length
 
@@ -344,7 +381,7 @@ export default function BookingsPage() {
               {tomorrowUnassigned} trip besok belum assign
             </div>
           )}
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 text-sm text-cream-muted hover:text-cream hover:border-sunset/30 transition-all">
+          <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 text-sm text-cream-muted hover:text-cream hover:border-sunset/30 transition-all">
             <Download className="w-4 h-4" /> Export CSV
           </button>
         </div>
@@ -356,7 +393,7 @@ export default function BookingsPage() {
           { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString('en-US')}`, sub: 'from filtered' },
           { label: 'Filtered Bookings', value: filtered.length, sub: `of ${bookings.length} total` },
           { label: 'Total Travelers', value: totalGuests, sub: 'guests in selection' },
-          { label: 'Avg Booking Value', value: filtered.length ? `$${Math.round(totalRevenue / filtered.length)}` : '$0', sub: 'per booking' },
+          { label: 'Total Received', value: `$${totalReceived.toLocaleString('en-US')}`, sub: 'payments received' },
         ].map(c => (
           <div key={c.label} className="glass-card rounded-2xl p-4">
             <div className="font-display text-xl text-cream font-bold">{c.value}</div>
@@ -405,7 +442,7 @@ export default function BookingsPage() {
                 </td></tr>
               )}
               {!loading && filtered.map(b => (
-                <>
+                <Fragment key={b.code}>
                   <tr
                     key={b.code}
                     className={`border-b border-white/3 hover:bg-white/2 cursor-pointer transition-colors ${selected === b.code ? 'bg-sunset/5' : ''} ${isTomorrow(b.date) && !b.driverName ? 'border-l-2 border-l-lava/60' : ''}`}
@@ -458,13 +495,26 @@ export default function BookingsPage() {
                           <button
                             onClick={async e => {
                               e.stopPropagation()
-                              await fetch('/api/admin/assign-driver', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ bookingCode: b.code, driverName: b.driverName, dispatch: true }),
-                              })
-                              const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
-                              if (data) setBookings(data.map(mapRow))
+                              try {
+                                const res = await fetch('/api/admin/assign-driver', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    bookingCode: b.code,
+                                    driverName: b.driverName,
+                                    driverVehicle: b.vehicle,
+                                    dispatch: true,
+                                  }),
+                                })
+                                if (!res.ok) {
+                                  const err = await res.json().catch(() => ({}))
+                                  throw new Error(err.error || `Server error ${res.status}`)
+                                }
+                                const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
+                                if (data) setBookings(data.map(mapRow))
+                              } catch (err) {
+                                alert(`Gagal dispatch: ${err instanceof Error ? err.message : 'Unknown error'}`)
+                              }
                             }}
                             className="p-1.5 rounded-lg hover:bg-sunset/15 text-cream-muted hover:text-sunset transition-colors"
                             title="Dispatch sekarang"
@@ -473,7 +523,7 @@ export default function BookingsPage() {
                           </button>
                         )}
                         <a
-                          href={`https://wa.me/${b.whatsapp.replace(/[^0-9]/g, '')}?text=Hi ${b.name.split(' ')[0]}, this is Rehan Tour regarding your booking ${b.code}`}
+                          href={`https://wa.me/${b.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${b.name.split(' ')[0]}, this is Rehan Tour regarding your booking ${b.code}`)}`}
                           target="_blank"
                           className="p-1.5 rounded-lg hover:bg-wa/10 text-cream-muted hover:text-wa transition-colors"
                           title="WhatsApp" onClick={e => e.stopPropagation()}
@@ -528,13 +578,18 @@ export default function BookingsPage() {
                               <UserCheck className="w-3.5 h-3.5" />
                               {b.driverName ? 'Ganti Driver' : 'Assign Driver'}
                             </button>
-                            <button className="btn-ghost text-xs py-1.5 px-4">Send Reminder</button>
+                            <a
+                              href={`https://wa.me/${b.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${b.name.split(' ')[0]}, this is a reminder from Rehan Tour for your upcoming trip on ${b.date}. Your booking code is ${b.code}. Please be ready at ${b.pickupTime || 'the scheduled time'}. Thank you!`)}`}
+                              target="_blank"
+                              onClick={e => e.stopPropagation()}
+                              className="btn-ghost text-xs py-1.5 px-4"
+                            >Send Reminder</a>
                           </div>
                         </motion.div>
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

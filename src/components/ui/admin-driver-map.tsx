@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { getPusherClient } from '@/lib/pusher-client'
+import 'leaflet/dist/leaflet.css'
 
 interface DriverState {
   driverName: string
@@ -99,6 +100,7 @@ export default function AdminDriverMap({ initialDrivers = [] }: Props) {
     if (existing) {
       existing.setLatLng([driver.lat, driver.lng])
       existing.setIcon(icon)
+      existing.off('click').on('click', () => setSelected(driver))
     } else {
       const marker = L.marker([driver.lat, driver.lng], { icon })
         .addTo(mapInst.current!)
@@ -151,14 +153,8 @@ export default function AdminDriverMap({ initialDrivers = [] }: Props) {
     })
   }, [initialDrivers])
 
-  // Update markers when drivers state changes (Pusher real-time)
-  useEffect(() => {
-    drivers.forEach(d => updateMarker(d))
-  }, [drivers])
-
   return (
     <div className="relative h-full">
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <div ref={mapRef} className="w-full h-full" />
 
       {/* Selected driver popup */}

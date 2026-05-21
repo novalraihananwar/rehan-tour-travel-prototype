@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pusherServer } from '@/lib/pusher'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { driverStateStore } from '@/lib/driver-state'
 
 export async function POST(req: NextRequest) {
+  const supabase = getSupabaseAdmin()
   try {
     const body = await req.json()
     const { bookingCode, lat, lng, status, driverName, driverId, vehicle } = body
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const supabase = getSupabaseAdmin()
   const code = req.nextUrl.searchParams.get('code')
   if (!code) return NextResponse.json({ error: 'Missing code' }, { status: 400 })
 

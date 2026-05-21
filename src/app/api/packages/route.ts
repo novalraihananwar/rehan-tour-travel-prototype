@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase, getSupabaseAdmin } from '@/lib/supabase'
 import { tourPackages } from '@/lib/data'
 
 // GET — merge Supabase packages (overrides) with hardcoded
@@ -41,8 +41,18 @@ export async function GET(req: NextRequest) {
 
 // POST — create new package
 export async function POST(req: NextRequest) {
+  const supabase = getSupabaseAdmin()
   try {
     const body = await req.json()
+
+    // BUG-6: cek duplikasi slug sebelum insert
+    const { data: existing } = await supabase
+      .from('tour_packages')
+      .select('slug')
+      .eq('slug', body.slug)
+      .single()
+    if (existing) return NextResponse.json({ error: 'Slug already exists' }, { status: 409 })
+
     const { data, error } = await supabase
       .from('tour_packages')
       .insert({
@@ -83,6 +93,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH — update package
 export async function PATCH(req: NextRequest) {
+  const supabase = getSupabaseAdmin()
   try {
     const body = await req.json()
     const { slug, ...updates } = body

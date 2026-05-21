@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { tourPackages } from '@/lib/data'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const supabase = getSupabaseAdmin()
   try {
     // Bookings stats
     const { data: bookings } = await supabase
@@ -12,7 +13,8 @@ export async function GET() {
       .select('code, name, total_usd, status, created_at, package_title, payment_method')
 
     const totalBookings  = bookings?.length || 0
-    const confirmedCount = bookings?.filter(b => ['confirmed', 'on-trip', 'completed'].includes(b.status)).length || 0
+    // BUG-7: sertakan status assigned dan dispatched dalam confirmed count
+    const confirmedCount = bookings?.filter(b => ['confirmed', 'assigned', 'dispatched', 'on-trip', 'completed'].includes(b.status)).length || 0
     const pendingCount   = bookings?.filter(b => b.status === 'pending').length || 0
     const totalRevenue   = bookings?.filter(b => b.status !== 'cancelled').reduce((s, b) => s + (Number(b.total_usd) || 0), 0) || 0
 

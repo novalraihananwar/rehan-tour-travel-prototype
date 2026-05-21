@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const supabase = getSupabaseAdmin()
   try {
     // Get bookings with assigned drivers from the past 7 days to next 90 days
     const from = new Date()

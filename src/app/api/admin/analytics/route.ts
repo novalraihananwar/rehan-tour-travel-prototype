@@ -1,13 +1,27 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+const PERIOD_DAYS: Record<string, number> = {
+  '1M':  30,
+  '3M':  90,
+  '6M':  180,
+  '1Y':  365,
+}
+
+export async function GET(request: Request) {
+  const supabase = getSupabaseAdmin()
   try {
+    const { searchParams } = new URL(request.url)
+    const period    = searchParams.get('period') || '6M'
+    const days      = PERIOD_DAYS[period] ?? 180
+    const cutoff    = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+
     const { data: raw } = await supabase
       .from('bookings')
       .select('total_usd, status, created_at, guests, package_title, payment_method')
+      .gte('created_at', cutoff)
 
     const bookings = (raw || []).filter(b => b.status !== 'cancelled')
 
@@ -48,8 +62,14 @@ export async function GET() {
     const weeklyTrend = Array.from({ length: 8 }, (_, i) => {
       const weeksAgo = 7 - i
       const d = new Date(now - weeksAgo * MS_WEEK)
+      const weekStart = new Date(d)
+      const day = weekStart.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+      const diff = day === 0 ? -6 : 1 - day // offset to Monday
+      weekStart.setDate(weekStart.getDate() + diff)
+      const dayStr   = weekStart.getDate().toString().padStart(2, '0')
+      const monthStr = weekStart.toLocaleString('en-US', { month: 'short' })
       return {
-        week:    `W${Math.ceil(d.getDate() / 7)} ${d.toLocaleString('en-US', { month: 'short' })}`,
+        week:    `${dayStr} ${monthStr}`,
         revenue: Math.round(weekRev[weeksAgo] || 0),
       }
     })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { sendWhatsApp, msgH1Customer, msgH1Driver } from '@/lib/whatsapp'
 
 // Vercel Cron — runs daily at 08:00 WIB (01:00 UTC)
@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
+  const supabase = getSupabaseAdmin()
   const authHeader = req.headers.get('authorization')
   if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

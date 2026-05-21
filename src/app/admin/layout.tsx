@@ -24,12 +24,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen]   = useState(false)
   const [isAuth, setIsAuth]             = useState<boolean | null>(null)
   const [newBookings, setNewBookings]   = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [searchQuery, setSearchQuery]   = useState('')
 
   // Auth check
   useEffect(() => {
     if (pathname === '/admin/login') { setIsAuth(true); return }
     if (typeof window !== 'undefined') {
       if (localStorage.getItem('admin_auth') !== 'true') {
+        setIsAuth(false)  // BUG-6: prevent stuck null state
         router.replace('/admin/login')
       } else {
         setIsAuth(true)
@@ -42,11 +45,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!isAuth) return
     const computeBadge = async () => {
       try {
-        const res  = await fetch('/api/admin/stats', { cache: 'no-store' })
+        const res = await fetch('/api/admin/stats', { cache: 'no-store' })
+        if (!res.ok) throw new Error(`Badge fetch failed: ${res.status}`)
         const data = await res.json()
         const seen = parseInt(localStorage.getItem('admin_seen_bookings') || '0')
         setNewBookings(Math.max(0, (data.totalBookings || 0) - seen))
-      } catch {}
+        setPendingCount(data.pendingCount || 0)
+      } catch (err) {
+        console.error('[AdminLayout] badge fetch error:', err)
+      }
     }
     computeBadge()
     const interval = setInterval(computeBadge, 15000)
@@ -57,12 +64,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (pathname === '/admin/bookings') {
       fetch('/api/admin/stats', { cache: 'no-store' })
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error(`Badge clear failed: ${r.status}`)
+          return r.json()
+        })
         .then(data => {
           localStorage.setItem('admin_seen_bookings', String(data.totalBookings || 0))
           setNewBookings(0)
         })
-        .catch(() => {})
+        .catch((err) => {
+          console.error('[AdminLayout] badge clear error:', err)
+        })
     }
   }, [pathname])
 
@@ -72,9 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const isActive = (href: string, exact?: boolean) =>
-    exact ? pathname === href : pathname.startsWith(href) && href !== '/admin'
-      ? true
-      : pathname === href
+    exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
 
   if (pathname === '/admin/login') return <>{children}</>
 
@@ -232,20 +242,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Search */}
+          {/* Search — BUG-4: controlled input with Enter-key submit */}
           <div className="relative flex-1 max-w-md hidden sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cream-muted" />
             <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  router.push(`/admin?q=${encodeURIComponent(searchQuery.trim())}`)
+                }
+              }}
               placeholder="Search bookings, drivers, packages..."
               className="w-full pl-9 pr-4 py-2 text-sm bg-volcanic-400/50 border border-white/8 rounded-xl text-cream placeholder:text-cream-muted outline-none focus:border-sunset/40 focus:bg-volcanic-400"
             />
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            {/* Notification bell */}
+            {/* Notification bell — BUG-5: dot only shown when pendingCount > 0 */}
             <button className="relative p-2 rounded-xl text-cream-muted hover:text-cream hover:bg-white/5 transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-sunset" />
+              {pendingCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-sunset" />
+              )}
             </button>
 
             {/* Admin avatar */}

@@ -91,20 +91,28 @@ export default function AnalyticsPage() {
     async function load(silent = false) {
       if (!silent) setLoading(true)
       try {
-        const res = await fetch('/api/admin/analytics', { cache: 'no-store' })
+        const res = await fetch(`/api/admin/analytics?period=${period}`, { cache: 'no-store' })
+        if (!res.ok) throw new Error('API error ' + res.status)
         setData(await res.json())
-      } catch {}
-      if (!silent) setLoading(false)
+      } catch (err) {
+        console.error('Analytics load error:', err)
+      } finally {
+        if (!silent) setLoading(false)
+      }
     }
     load()
     const interval = setInterval(() => load(true), 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [period])
 
   const copyScript = () => {
-    navigator.clipboard.writeText(APPS_SCRIPT)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      navigator.clipboard.writeText(APPS_SCRIPT)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy script:', err)
+    }
   }
 
   const fmt = (n: number) => n > 0 ? `$${n.toLocaleString('en-US')}` : '—'
@@ -178,7 +186,7 @@ export default function AnalyticsPage() {
         >
           <h3 className="text-sm font-medium text-cream mb-1">Revenue & Passengers Over Time</h3>
           <p className="text-xs text-cream-muted mb-4">Monthly aggregation · real bookings</p>
-          {data?.monthlyData.length === 0 ? (
+          {(!data || data.monthlyData.length === 0) ? (
             <div className="h-[220px] flex items-center justify-center text-cream-muted text-sm">
               No booking data yet
             </div>
@@ -238,7 +246,7 @@ export default function AnalyticsPage() {
         >
           <h3 className="text-sm font-medium text-cream mb-1">Revenue by Package</h3>
           <p className="text-xs text-cream-muted mb-4">All-time · real bookings</p>
-          {data?.packageRevenueData.length === 0 ? (
+          {(!data || data.packageRevenueData.length === 0) ? (
             <div className="h-[220px] flex items-center justify-center text-cream-muted text-sm">No booking data yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>

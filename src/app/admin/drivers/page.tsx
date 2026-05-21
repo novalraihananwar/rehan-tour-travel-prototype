@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { Navigation, Phone, Users, Clock, CheckCircle, AlertCircle, Truck } from 'lucide-react'
+import 'leaflet/dist/leaflet.css'
 
 const AdminDriverMap = dynamic(() => import('@/components/ui/admin-driver-map'), {
   ssr: false,
@@ -51,10 +52,16 @@ export default function AdminDriversPage() {
   const [loading, setLoading] = useState(true)
 
   const fetchDrivers = async () => {
-    const res  = await fetch('/api/admin/drivers')
-    const data = await res.json()
-    setDrivers(data)
-    setLoading(false)
+    try {
+      const res = await fetch('/api/admin/drivers')
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      setDrivers(Array.isArray(data) ? data : [])
+    } catch (e) {
+      console.error('fetchDrivers failed', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -118,7 +125,7 @@ export default function AdminDriversPage() {
             )}
 
             {drivers.map(driver => (
-              <div key={driver.driverName} className="glass-card rounded-2xl p-5 hover:border-sunset/20 transition-all">
+              <div key={`${driver.driverName}-${driver.vehicle}`} className="glass-card rounded-2xl p-5 hover:border-sunset/20 transition-all">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sunset/80 to-gold/80 flex items-center justify-center text-volcanic font-bold font-display shrink-0">
@@ -170,7 +177,6 @@ export default function AdminDriversPage() {
 
           {/* Right — full map */}
           <div className="lg:col-span-2 glass-card rounded-2xl overflow-hidden">
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <AdminDriverMap initialDrivers={drivers} />
           </div>
         </div>

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { pusherServer } from '@/lib/pusher'
 import { sendWhatsApp, msgDriverAccepted } from '@/lib/whatsapp'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const supabase = getSupabaseAdmin()
   try {
     const { bookingCode, action, driverName } = await req.json()
 

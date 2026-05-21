@@ -22,13 +22,32 @@ const monthlyData = [
   { month: 'Jun', revenue: 35200, bookings: 94, passengers: 517 },
 ]
 
-const fleetStatusData = [
+// BUG-9: static fallback used when API does not return fleet breakdown
+const fleetStatusFallback = [
   { name: 'Available', value: 10, color: '#3A8A65' },
   { name: 'On Trip', value: 12, color: '#E8703A' },
   { name: 'Standby', value: 4, color: '#D4A843' },
   { name: 'Fully Booked', value: 2, color: '#C0392B' },
   { name: 'Maintenance', value: 2, color: '#8A7A6A' },
 ]
+
+function buildFleetStatusData(stats: AdminStats | null) {
+  if (
+    stats &&
+    (stats.driversOnTrip != null || stats.driversAvail != null || stats.totalDrivers != null)
+  ) {
+    const onTrip    = stats.driversOnTrip ?? 0
+    const avail     = stats.driversAvail  ?? 0
+    const total     = stats.totalDrivers  ?? 0
+    const standby   = Math.max(0, total - onTrip - avail)
+    return [
+      { name: 'Available', value: avail,   color: '#3A8A65' },
+      { name: 'On Trip',   value: onTrip,  color: '#E8703A' },
+      { name: 'Standby',   value: standby, color: '#D4A843' },
+    ].filter((d) => d.value > 0)
+  }
+  return fleetStatusFallback
+}
 
 const topPackages = [
   { name: 'Bromo Sunrise Classic', bookings: 312, revenue: 24648, change: +18 },
@@ -46,40 +65,7 @@ const recentBookings = [
   { code: 'RTT-6M3A-9C', name: 'Thomas Vandermeer', package: 'Tumpak Sewu Trek', date: '2026-05-23', guests: 1, total: 65, status: 'Confirmed', country: '🇳🇱' },
 ]
 
-const kpiCards = [
-  {
-    icon: DollarSign,
-    label: 'Monthly Revenue',
-    value: '$35,200',
-    change: '+18%',
-    sub: 'vs April 2026',
-    color: 'gold',
-  },
-  {
-    icon: Users,
-    label: 'Active Bookings',
-    value: '94',
-    change: '+23%',
-    sub: 'this month',
-    color: 'jungle',
-  },
-  {
-    icon: Truck,
-    label: 'Fleet Utilization',
-    value: '93%',
-    change: '+5%',
-    sub: '28 of 30 vehicles active',
-    color: 'sunset',
-  },
-  {
-    icon: TrendingUp,
-    label: 'Avg Rating',
-    value: '4.91',
-    change: '+0.04',
-    sub: 'from 3,247 reviews',
-    color: 'ocean',
-  },
-]
+// BUG-10: kpiCards array removed — was dead code (never rendered in JSX)
 
 const colorMap: Record<string, string> = {
   sunset: 'text-sunset bg-sunset/15',
@@ -145,9 +131,13 @@ export default function AdminOverview() {
     const fetchStats = async () => {
       try {
         const res = await fetch('/api/admin/stats', { cache: 'no-store' })
+        if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`)
         const data = await res.json()
         setStats(data)
-      } catch { /* use mock data */ } finally {
+      } catch (err) {
+        console.error('[AdminOverview] stats fetch error:', err)
+        /* keep previous stats or null — UI handles both gracefully */
+      } finally {
         setLoadingStats(false)
       }
     }
@@ -175,8 +165,8 @@ export default function AdminOverview() {
         {[
           {
             icon: DollarSign, label: 'Total Revenue',
-            value: stats ? `$${stats.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—',
-            sub: `Today: $${stats?.todayRevenue?.toFixed(0) || 0}`,
+            value: stats ? `$${(stats?.totalRevenue ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—',
+            sub: `Today: $${(stats?.todayRevenue ?? 0).toFixed(0)}`,
             color: 'gold',
           },
           {
@@ -275,7 +265,7 @@ export default function AdminOverview() {
               <Truck className="w-4 h-4 text-sunset" /> Fleet Status
             </h3>
             <div className="flex items-center gap-3">
-              <Link href="/admin/drivers" className="text-xs text-jungle-light hover:text-jungle transition-colors">
+              <Link href="/admin/fleet" className="text-xs text-jungle-light hover:text-jungle transition-colors">
                 Live Map →
               </Link>
               <Link href="/admin/fleet" className="text-xs text-sunset hover:text-gold transition-colors">
@@ -286,8 +276,8 @@ export default function AdminOverview() {
           <p className="text-xs text-cream-muted mb-4">Real-time, 30 vehicles</p>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>
-              <Pie data={fleetStatusData} cx="50%" cy="50%" innerRadius={48} outerRadius={70} dataKey="value" paddingAngle={3}>
-                {fleetStatusData.map((entry, i) => (
+              <Pie data={buildFleetStatusData(stats)} cx="50%" cy="50%" innerRadius={48} outerRadius={70} dataKey="value" paddingAngle={3}>
+                {buildFleetStatusData(stats).map((entry, i) => (
                   <Cell key={i} fill={entry.color} opacity={0.9} />
                 ))}
               </Pie>
@@ -295,7 +285,7 @@ export default function AdminOverview() {
             </PieChart>
           </ResponsiveContainer>
           <div className="space-y-1.5">
-            {fleetStatusData.map((s) => (
+            {buildFleetStatusData(stats).map((s) => (
               <div key={s.name} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />

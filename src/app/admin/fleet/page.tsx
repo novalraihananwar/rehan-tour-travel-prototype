@@ -9,6 +9,7 @@ import {
   Clock, Wrench, Navigation, Users, RefreshCw, ExternalLink, Copy, Check as CheckIcon, Calendar,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
+import 'leaflet/dist/leaflet.css'
 
 const AdminDriverMap = dynamic(() => import('@/components/ui/admin-driver-map'), {
   ssr: false,
@@ -63,8 +64,10 @@ export default function FleetPage() {
 
   useEffect(() => {
     if (view !== 'schedule') return
-    fetch('/api/admin/driver-schedule', { cache: 'no-store' })
+    const controller = new AbortController()
+    fetch('/api/admin/driver-schedule', { cache: 'no-store', signal: controller.signal })
       .then(r => r.json()).then(setSchedule).catch(() => {})
+    return () => controller.abort()
   }, [view])
 
   const driverLoginUrl = typeof window !== 'undefined'
@@ -80,9 +83,10 @@ export default function FleetPage() {
   // Fetch live drivers
   const fetchLive = async () => {
     try {
-      const res  = await fetch('/api/admin/drivers')
+      const res = await fetch('/api/admin/drivers')
+      if (!res.ok) throw new Error('API error')
       const data = await res.json()
-      setLiveDrivers(data)
+      setLiveDrivers(Array.isArray(data) ? data : [])
       setLastRefresh(new Date())
     } catch {}
   }
@@ -124,7 +128,7 @@ export default function FleetPage() {
         return [...prev, merged]
       })
     })
-    return () => { ch.unbind_all(); client.unsubscribe('admin-drivers') }
+    return () => { ch?.unbind_all(); client?.unsubscribe('admin-drivers') }
   }, [])
 
   const statuses = ['All', 'available', 'standby', 'on-trip', 'en-route', 'arrived', 'vehicle-problem', 'service', 'accident', 'offline']
@@ -227,7 +231,7 @@ export default function FleetPage() {
         </div>
       </div>
 
-      {view === 'map' ? (
+      {view === 'map' && (
         /* MAP VIEW — live driver positions */
         <div className="glass-card rounded-2xl overflow-hidden" style={{ height: '520px' }}>
           <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between">
@@ -241,11 +245,12 @@ export default function FleetPage() {
             <span className="text-xs text-cream-muted">{liveDrivers.length} driver online</span>
           </div>
           <div style={{ height: 'calc(100% - 48px)' }}>
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <AdminDriverMap initialDrivers={liveDrivers} />
           </div>
         </div>
-      ) : (
+      )}
+
+      {view === 'list' && (
         /* LIST VIEW — all fleet vehicles */
         <div className="space-y-4">
           {/* Filters */}
@@ -288,7 +293,7 @@ export default function FleetPage() {
                 const isActive = ['on-trip', 'en-route', 'arrived'].includes(d.status)
                 return (
                   <motion.div
-                    key={d.driverName}
+                    key={`${d.driverName}-${d.vehicle}`}
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
@@ -432,7 +437,7 @@ export default function FleetPage() {
             {liveDrivers.map(d => {
               const cfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.offline
               return (
-                <div key={d.driverName} className="flex items-center gap-4 px-5 py-3">
+                <div key={`${d.driverName}-${d.vehicle}`} className="flex items-center gap-4 px-5 py-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sunset/80 to-gold/80 flex items-center justify-center text-volcanic font-bold text-sm shrink-0">
                     {d.driverName[0]?.toUpperCase()}
                   </div>
