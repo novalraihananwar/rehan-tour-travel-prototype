@@ -88,17 +88,36 @@ export default function FleetPage() {
     let client: ReturnType<typeof getPusherClient>
     try { client = getPusherClient() } catch { return }
     const ch = client.subscribe('admin-drivers')
-    ch.bind('driver-update', (data: LiveDriver) => {
+    ch.bind('driver-update', (raw: Record<string, unknown>) => {
       setLiveDrivers(prev => {
-        const idx = prev.findIndex(d => d.driverName === data.driverName)
-        if (idx >= 0) { const n = [...prev]; n[idx] = data; return n }
-        return [...prev, data]
+        const idx = prev.findIndex(d => d.driverName === raw.driverName)
+        // Merge: keep existing trip counts, update position/status from Pusher
+        const base = idx >= 0 ? prev[idx] : {} as LiveDriver
+        const merged: LiveDriver = {
+          ...base,
+          driverName:  String(raw.driverName || base.driverName || ''),
+          vehicle:     String(raw.vehicle     || base.vehicle     || ''),
+          lat:         Number(raw.lat  ?? base.lat),
+          lng:         Number(raw.lng  ?? base.lng),
+          status:      String(raw.status      || base.status      || 'available'),
+          bookingCode: (raw.bookingCode as string | null) ?? base.bookingCode ?? null,
+          customerName: base.customerName ?? null,
+          pickupName:   base.pickupName   ?? null,
+          pickupLat:    base.pickupLat    ?? null,
+          pickupLng:    base.pickupLng    ?? null,
+          updatedAt:   Number(raw.timestamp   || raw.updatedAt || Date.now()),
+          tripsToday:  base.tripsToday  ?? 0,
+          tripsMonth:  base.tripsMonth  ?? 0,
+          tripsTotal:  base.tripsTotal  ?? 0,
+        }
+        if (idx >= 0) { const n = [...prev]; n[idx] = merged; return n }
+        return [...prev, merged]
       })
     })
     return () => { ch.unbind_all(); client.unsubscribe('admin-drivers') }
   }, [])
 
-  const statuses = ['All', 'available', 'on-trip', 'en-route', 'arrived', 'standby', 'offline']
+  const statuses = ['All', 'available', 'standby', 'on-trip', 'en-route', 'arrived', 'vehicle-problem', 'service', 'accident', 'offline']
 
   const filteredDrivers = liveDrivers.filter(d => {
     const matchStatus = filterStatus === 'All' || d.status === filterStatus
@@ -109,10 +128,10 @@ export default function FleetPage() {
   })
 
   const counts = {
-    available:   liveDrivers.filter(d => ['available', 'standby'].includes(d.status)).length,
-    onTrip:      liveDrivers.filter(d => ['on-trip', 'en-route', 'arrived'].includes(d.status)).length,
-    standby:     liveDrivers.filter(d => d.status === 'standby').length,
-    maintenance: 0,
+    available: liveDrivers.filter(d => d.status === 'available').length,
+    onTrip:    liveDrivers.filter(d => ['on-trip', 'en-route', 'arrived', 'confirmed'].includes(d.status)).length,
+    standby:   liveDrivers.filter(d => d.status === 'standby').length,
+    problem:   liveDrivers.filter(d => ['vehicle-problem', 'service', 'accident'].includes(d.status)).length,
   }
 
   return (
@@ -160,7 +179,7 @@ export default function FleetPage() {
           { label: 'Tersedia', count: counts.available, color: 'text-jungle-light', icon: CheckCircle },
           { label: 'On Trip',  count: counts.onTrip,   color: 'text-sunset',       icon: Navigation },
           { label: 'Standby',  count: counts.standby,  color: 'text-gold',         icon: Clock },
-          { label: 'Service',  count: counts.maintenance, color: 'text-cream-muted', icon: Wrench },
+          { label: 'Masalah',  count: counts.problem,  color: 'text-lava',         icon: Wrench },
         ].map(s => (
           <div key={s.label} className="glass-card rounded-2xl p-4 text-center">
             <s.icon className={`w-4 h-4 mx-auto mb-1 ${s.color}`} />
