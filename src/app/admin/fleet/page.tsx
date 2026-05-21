@@ -84,8 +84,6 @@ export default function FleetPage() {
     return () => { ch.unbind_all(); client.unsubscribe('admin-drivers') }
   }, [])
 
-  const statuses = ['All', 'Available', 'On Trip', 'Standby', 'Maintenance', 'Fully Booked']
-
   const statuses = ['All', 'available', 'on-trip', 'en-route', 'arrived', 'standby', 'offline']
 
   const filteredDrivers = liveDrivers.filter(d => {
