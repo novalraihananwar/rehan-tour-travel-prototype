@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle, Wrench, Zap, ShieldAlert } from 'lucide-react'
+import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle, Wrench, Zap, ShieldAlert, Bell, Clock, Users, Package, X } from 'lucide-react'
+import { getPusherClient } from '@/lib/pusher-client'
+import { driverChannel } from '@/lib/pickup-times'
 
 interface DriverSession {
   username: string
@@ -22,6 +24,15 @@ export default function DriverDashboard() {
   const [gpsStatus, setGpsStatus]     = useState<GpsStatus>('checking')
   const [gpsCoords, setGpsCoords]     = useState<{ lat: number; lng: number } | null>(null)
   const [currentStatus, setCurrentStatus] = useState<string>('available')
+
+  // Incoming booking notification
+  const [incomingBooking, setIncomingBooking] = useState<{
+    bookingCode: string; packageTitle: string; customerName: string
+    guests: number; pickupName: string; date: string; pickupTime: string
+    totalUsd: number
+  } | null>(null)
+  const [countdown, setCountdown] = useState(60)
+  const countdownRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const raw = localStorage.getItem('driver_session')
@@ -119,6 +130,55 @@ export default function DriverDashboard() {
     return () => { if (standbyIntervalRef.current) clearInterval(standbyIntervalRef.current) }
   }, [])
 
+  // Subscribe to driver-specific Pusher channel for incoming bookings
+  useEffect(() => {
+    if (!session) return
+    let client: ReturnType<typeof getPusherClient>
+    try { client = getPusherClient() } catch { return }
+
+    const ch = client.subscribe(driverChannel(session.name))
+    ch.bind('new-booking', (data: typeof incomingBooking) => {
+      setIncomingBooking(data)
+      setCountdown(60)
+      if (countdownRef.current) clearInterval(countdownRef.current)
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownRef.current!)
+            setIncomingBooking(null)
+            return 60
+          }
+          return prev - 1
+        })
+      }, 1000)
+    })
+    return () => { ch.unbind_all(); client.unsubscribe(driverChannel(session.name)) }
+  }, [session])
+
+  const handleAccept = async () => {
+    if (!incomingBooking || !session) return
+    clearInterval(countdownRef.current!)
+    await fetch('/api/driver/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingCode: incomingBooking.bookingCode, action: 'accept', driverName: session.name }),
+    })
+    const code = incomingBooking.bookingCode
+    setIncomingBooking(null)
+    router.push(`/driver/${code}`)
+  }
+
+  const handleReject = async () => {
+    if (!incomingBooking || !session) return
+    clearInterval(countdownRef.current!)
+    await fetch('/api/driver/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingCode: incomingBooking.bookingCode, action: 'reject', driverName: session.name }),
+    })
+    setIncomingBooking(null)
+  }
+
   const handleStartTrip = (e: React.FormEvent) => {
     e.preventDefault()
     const code = bookingCode.trim().toUpperCase()
@@ -188,6 +248,96 @@ export default function DriverDashboard() {
 
   return (
     <div className="min-h-screen bg-volcanic">
+
+      {/* Incoming booking popup */}
+      <AnimatePresence>
+        {incomingBooking && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/80"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 30 }}
+              className="w-full max-w-sm glass-card rounded-3xl p-6 border-sunset/30"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-12 h-12 rounded-full bg-sunset/20 border-2 border-sunset/40 flex items-center justify-center animate-pulse">
+                  <Bell className="w-6 h-6 text-sunset" />
+                </div>
+                <div>
+                  <h2 className="font-display text-xl text-cream">Orderan Masuk!</h2>
+                  <p className="text-xs text-cream-muted">Konfirmasi dalam {countdown} detik</p>
+                </div>
+              </div>
+
+              {/* Countdown bar */}
+              <div className="w-full h-1.5 bg-volcanic-400 rounded-full mb-5 overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-sunset to-gold rounded-full"
+                  animate={{ width: `${(countdown / 60) * 100}%` }}
+                  transition={{ duration: 0.9, ease: 'linear' }}
+                />
+              </div>
+
+              {/* Trip details */}
+              <div className="space-y-2.5 mb-6 text-sm">
+                <div className="flex items-start gap-3 p-3 glass-card rounded-xl">
+                  <Package className="w-4 h-4 text-sunset shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-cream-muted">Paket</p>
+                    <p className="text-cream font-medium">{incomingBooking.packageTitle}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 p-3 glass-card rounded-xl">
+                    <Users className="w-4 h-4 text-gold shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-cream-muted">Tamu</p>
+                      <p className="text-sm text-cream font-medium">{incomingBooking.guests} orang</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 glass-card rounded-xl">
+                    <Clock className="w-4 h-4 text-ocean-light shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-cream-muted">Jam Jemput</p>
+                      <p className="text-sm text-sunset font-mono font-bold">{incomingBooking.pickupTime || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 p-3 glass-card rounded-xl">
+                  <MapPin className="w-4 h-4 text-jungle-light shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] text-cream-muted">Pickup · {incomingBooking.date}</p>
+                    <p className="text-sm text-cream">{incomingBooking.pickupName}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Accept / Reject */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleReject}
+                  className="flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-lava/30 bg-lava/10 text-lava font-medium hover:bg-lava/20 transition-colors"
+                >
+                  <X className="w-4 h-4" /> Tolak
+                </button>
+                <button
+                  onClick={handleAccept}
+                  className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-jungle to-jungle-light text-volcanic font-bold hover:opacity-90 transition-opacity"
+                >
+                  <CheckCircle className="w-4 h-4" /> Terima
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="glass border-b border-white/8 px-5 py-4">
         <div className="max-w-sm mx-auto flex items-center justify-between">

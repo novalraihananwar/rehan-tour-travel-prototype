@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
         pickup_address:  body.pickupAddress || null,
         pickup_fee_usd:  body.pickupFeeUsd || 0,
         pickup_custom:   body.pickupIsCustom || false,
+        pickup_time:     body.pickupTime || null,
         name:            body.name,
         email:           body.email,
         whatsapp:        body.whatsapp,

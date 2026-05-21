@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
@@ -11,6 +11,7 @@ import { tourPackages } from '@/lib/data'
 import { BookingCalendar } from '@/components/ui/calendar'
 import { generateBookingCode } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
+import { getPickupTimes } from '@/lib/pickup-times'
 
 const PickupMap = dynamic(() => import('@/components/ui/pickup-map').then(m => m.PickupMap), {
   ssr: false,
@@ -29,6 +30,11 @@ function BookingPageInner() {
   const suggestSlug    = params.get('suggest') || ''
   const isDestMode     = !!params.get('destination') && !params.get('package')
 
+  // Minimum booking date: H+2
+  const minBookingDate = new Date()
+  minBookingDate.setDate(minBookingDate.getDate() + 2)
+  minBookingDate.setHours(0, 0, 0, 0)
+
   // Skip Step 1 if package already chosen OR coming from a destination page
   const [step, setStep] = useState(() =>
     (params.get('package') || params.get('destination')) ? 2 : 1
@@ -37,6 +43,7 @@ function BookingPageInner() {
     packageId: params.get('package') || '',
     date: params.get('date') || '',
     guests: parseInt(params.get('guests') || '2'),
+    pickupTime: '',
     pickupId: '',
     pickupName: '',
     pickupAddress: '',
@@ -53,6 +60,15 @@ function BookingPageInner() {
 
   const selectedPkg    = tourPackages.find((p) => p.slug === formData.packageId)
   const suggestedPkg   = suggestSlug ? tourPackages.find((p) => p.slug === suggestSlug) : null
+  const pickupTimeCfg  = getPickupTimes(formData.packageId || suggestSlug)
+  const [dateError, setDateError] = useState('')
+
+  // Auto-set default pickup time when package changes
+  useEffect(() => {
+    if (!formData.pickupTime && pickupTimeCfg.default) {
+      setFormData(f => ({ ...f, pickupTime: pickupTimeCfg.default }))
+    }
+  }, [formData.packageId])
   const totalPriceUSD  = selectedPkg ? selectedPkg.price.usd * formData.guests : 0
   const pickupFeeUSD   = formData.pickupFee / 15000
 
@@ -99,6 +115,7 @@ function BookingPageInner() {
           guests:        formData.guests,
           pickupName:    formData.pickupName,
           pickupAddress: formData.pickupAddress,
+          pickupTime:    formData.pickupTime,
           pickupFeeUsd:  pickupFeeUSD,
           pickupIsCustom: formData.pickupIsCustom,
           name:          formData.name,
@@ -121,6 +138,7 @@ function BookingPageInner() {
       `*Kode:* ${bookingCode}\n` +
       `*Paket:* ${selectedPkg?.title || '-'}\n` +
       `*Tanggal:* ${formData.date ? formatDateShort(formData.date) : '-'}\n` +
+      `*Jam Jemput:* ${formData.pickupTime || '-'}\n` +
       `*Tamu:* ${formData.guests} orang\n` +
       `*Pickup:* ${formData.pickupName || '-'}\n` +
       `*Total:* ${formatPrice(totalPriceUSD + pickupFeeUSD)}\n\n` +
@@ -303,12 +321,27 @@ function BookingPageInner() {
                   <p className="text-xs text-cream-muted mb-4">Highlighted dates = next departures</p>
                   <BookingCalendar
                     onDateSelect={(d) => {
+                      d.setHours(12, 0, 0, 0)
+                      if (d < minBookingDate) {
+                        setDateError('Minimum booking H+2 dari hari ini.')
+                        return
+                      }
+                      setDateError('')
                       const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
                       setFormData({ ...formData, date: localDate })
                     }}
                     selectedDate={formData.date ? new Date(formData.date + 'T12:00:00') : null}
                     highlightedDates={tourPackages.map(p => p.nextDeparture)}
                   />
+                  {dateError && <p className="text-xs text-lava mt-2">{dateError}</p>}
+                  {formData.date && (() => {
+                    const monthsAhead = (new Date(formData.date + 'T12:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)
+                    return monthsAhead > 6 ? (
+                      <p className="text-xs text-gold mt-2 leading-relaxed">
+                        📅 Booking jauh ke depan — harga & ketersediaan akan dikonfirmasi ulang H-7 sebelum keberangkatan.
+                      </p>
+                    ) : null
+                  })()}
                 </div>
                 <div>
                   <h2 className="font-display text-lg text-cream mb-1">How many?</h2>
@@ -327,6 +360,38 @@ function BookingPageInner() {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Pickup time picker */}
+              <div className="mt-6 pt-6 border-t border-white/8">
+                <h2 className="font-display text-lg text-cream mb-1">Jam Jemput</h2>
+                <p className="text-xs text-cream-muted mb-3">
+                  {pickupTimeCfg.note || 'Pilih waktu penjemputan yang sesuai'}
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {pickupTimeCfg.options.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, pickupTime: t })}
+                      className={`py-2.5 rounded-xl text-sm font-mono font-medium border transition-all ${
+                        formData.pickupTime === t
+                          ? 'bg-sunset/20 border-sunset/50 text-sunset'
+                          : 'border-white/10 text-cream-muted hover:border-sunset/30 hover:text-cream'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                  <input
+                    type="time"
+                    value={!pickupTimeCfg.options.includes(formData.pickupTime) ? formData.pickupTime : ''}
+                    onChange={e => e.target.value && setFormData({ ...formData, pickupTime: e.target.value })}
+                    className="py-2.5 px-2 rounded-xl text-sm font-mono border border-white/10 bg-volcanic-400/30 text-cream-muted hover:border-sunset/30 transition-all col-span-1"
+                    title="Waktu lainnya"
+                    placeholder="Lainnya"
+                  />
                 </div>
               </div>
 
@@ -470,6 +535,12 @@ function BookingPageInner() {
                   </div>
                 ) : null}
                 <div className="space-y-3 text-sm">
+                  {formData.pickupTime && (
+                    <div className="flex justify-between text-cream-muted">
+                      <span className="flex items-center gap-1.5">⏰ Jam Jemput</span>
+                      <span className="text-cream font-mono font-medium">{formData.pickupTime} WIB</span>
+                    </div>
+                  )}
                   {selectedPkg && (
                     <div className="flex justify-between text-cream-muted">
                       <span>{formatPrice(selectedPkg.price.usd)} × {formData.guests} {t.booking.travelers_label}</span>

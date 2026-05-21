@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckCircle, Clock, MapPin, Navigation, Phone,
-  Star, Share2, Calendar, Users, Copy, Check,
+  Star, Calendar, Users, Copy, Check,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
 
@@ -40,13 +40,38 @@ function getStatusIndex(status: string) {
   return idx === -1 ? 0 : idx
 }
 
+interface BookingInfo {
+  packageTitle: string; date: string; pickupTime: string
+  pickupName: string; guests: number; driverName: string | null
+  status: string
+}
+
 export function BookingTrackerClient({ code }: { code: string }) {
-  const [location, setLocation]   = useState<DriverLocation | null>(null)
-  const [connected, setConnected] = useState(false)
-  const [copied, setCopied]       = useState(false)
+  const [location, setLocation]     = useState<DriverLocation | null>(null)
+  const [connected, setConnected]   = useState(false)
+  const [copied, setCopied]         = useState(false)
+  const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null)
   const channelRef = useRef<{ unbind_all: () => void } | null>(null)
 
-  // Load last known location on mount
+  // Load booking details
+  useEffect(() => {
+    fetch(`/api/bookings?code=${code}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        if (data) setBookingInfo({
+          packageTitle: data.package_title || '',
+          date:         data.date || '',
+          pickupTime:   data.pickup_time || '',
+          pickupName:   data.pickup_name || '',
+          guests:       data.guests || 1,
+          driverName:   data.driver_name || null,
+          status:       data.status || 'pending',
+        })
+      })
+      .catch(() => {})
+  }, [code])
+
+  // Load last known GPS location on mount
   useEffect(() => {
     fetch(`/api/driver/location?code=${code}`)
       .then(r => r.json())
@@ -129,20 +154,46 @@ export function BookingTrackerClient({ code }: { code: string }) {
               <MapView location={location} bookingCode={code} />
             </div>
 
+            {/* Booking info card — pickup time + driver */}
+            {bookingInfo && (
+              <div className="glass-card rounded-2xl p-5 space-y-3">
+                {bookingInfo.pickupTime && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-sunset" />
+                      <span className="text-sm text-cream-muted">Jam Jemput</span>
+                    </div>
+                    <span className="text-sunset font-mono font-bold text-base">{bookingInfo.pickupTime} WIB</span>
+                  </div>
+                )}
+                {bookingInfo.pickupName && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-jungle-light" />
+                      <span className="text-sm text-cream-muted">Pickup</span>
+                    </div>
+                    <span className="text-cream text-sm text-right max-w-[160px] truncate">{bookingInfo.pickupName}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Driver card */}
             <AnimatePresence>
-              {location?.driverName && (
+              {(location?.driverName || bookingInfo?.driverName) && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="glass-card rounded-2xl p-5 flex items-center gap-4"
                 >
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sunset to-gold flex items-center justify-center text-volcanic font-bold text-lg font-display shrink-0">
-                    {location.driverName[0].toUpperCase()}
+                    {(location?.driverName || bookingInfo?.driverName || '?')[0].toUpperCase()}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-cream">{location.driverName}</p>
-                    <p className="text-xs text-cream-muted">Your driver · Toyota HiAce</p>
+                    <p className="text-sm font-medium text-cream">{location?.driverName || bookingInfo?.driverName}</p>
+                    <p className="text-xs text-cream-muted">
+                      {location ? 'Live tracking aktif' : 'Driver assigned · menunggu keberangkatan'}
+                    </p>
                   </div>
                   <a
                     href="tel:+6281234567890"

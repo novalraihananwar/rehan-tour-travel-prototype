@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Truck, MapPin, Phone, CheckCircle, AlertCircle,
-  Clock, Wrench, Navigation, Users, RefreshCw, ExternalLink, Copy, Check as CheckIcon,
+  Clock, Wrench, Navigation, Users, RefreshCw, ExternalLink, Copy, Check as CheckIcon, Calendar,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
 
@@ -53,9 +53,19 @@ export default function FleetPage() {
   const [liveDrivers, setLiveDrivers]   = useState<LiveDriver[]>([])
   const [filterStatus, setFilterStatus] = useState('All')
   const [searchQ, setSearchQ]           = useState('')
-  const [view, setView]                 = useState<'map' | 'list'>('map')
+  const [view, setView]                 = useState<'map' | 'list' | 'schedule'>('map')
   const [lastRefresh, setLastRefresh]   = useState(new Date())
   const [copied, setCopied]             = useState(false)
+  const [schedule, setSchedule]         = useState<Record<string, Array<{
+    code: string; packageTitle: string; date: string
+    pickupTime: string; guests: number; status: string; customerName: string
+  }>>>({})
+
+  useEffect(() => {
+    if (view !== 'schedule') return
+    fetch('/api/admin/driver-schedule', { cache: 'no-store' })
+      .then(r => r.json()).then(setSchedule).catch(() => {})
+  }, [view])
 
   const driverLoginUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/driver/login`
@@ -160,13 +170,13 @@ export default function FleetPage() {
             Refresh
           </button>
           <div className="flex rounded-xl overflow-hidden border border-white/10">
-            {(['map', 'list'] as const).map(v => (
+            {([['map', 'Peta Live'], ['list', 'Daftar'], ['schedule', 'Jadwal']] as const).map(([v, label]) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-4 py-2 text-xs font-medium capitalize transition-all ${view === v ? 'bg-sunset text-volcanic' : 'text-cream-muted hover:text-cream'}`}
+                className={`px-4 py-2 text-xs font-medium transition-all ${view === v ? 'bg-sunset text-volcanic' : 'text-cream-muted hover:text-cream'}`}
               >
-                {v === 'map' ? 'Peta Live' : 'Daftar'}
+                {label}
               </button>
             ))}
           </div>
@@ -357,6 +367,54 @@ export default function FleetPage() {
                 )
               })}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Schedule view */}
+      {view === 'schedule' && (
+        <div className="space-y-4">
+          {Object.keys(schedule).length === 0 ? (
+            <div className="glass-card rounded-2xl py-16 text-center text-cream-muted text-sm">
+              Belum ada driver yang di-assign ke booking apapun.
+            </div>
+          ) : (
+            Object.entries(schedule).map(([driverName, trips]) => (
+              <div key={driverName} className="glass-card rounded-2xl overflow-hidden">
+                <div className="px-5 py-3 border-b border-white/8 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sunset to-gold flex items-center justify-center text-volcanic font-bold text-sm shrink-0">
+                    {driverName[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-cream">{driverName}</p>
+                    <p className="text-xs text-cream-muted">{trips.length} booking terjadwal</p>
+                  </div>
+                </div>
+                <div className="divide-y divide-white/4">
+                  {trips.map(t => {
+                    const statusColor = t.status === 'confirmed' ? 'text-jungle-light'
+                      : t.status === 'dispatched' ? 'text-sunset'
+                      : 'text-gold'
+                    return (
+                      <div key={t.code} className="px-5 py-3 flex items-center gap-4 hover:bg-white/2 transition-colors">
+                        <div className="w-16 text-center shrink-0">
+                          <p className="text-xs font-bold text-cream">{t.date?.slice(5)}</p>
+                          <p className="text-[10px] text-sunset font-mono">{t.pickupTime || '—'}</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-cream truncate">{t.packageTitle}</p>
+                          <p className="text-[11px] text-cream-muted">{t.customerName} · {t.guests} tamu</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-[11px] font-medium capitalize ${statusColor}`}>{t.status}</p>
+                          <p className="text-[10px] text-cream-muted font-mono">{t.code}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))
           )}
         </div>
       )}

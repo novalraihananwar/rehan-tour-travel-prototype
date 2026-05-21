@@ -1,85 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
 
-// Vercel Cron Job — runs daily at 08:00 WIB (01:00 UTC)
-// Add to vercel.json: { "crons": [{ "path": "/api/cron/reminder", "schedule": "0 1 * * *" }] }
+// Vercel Cron — runs daily at 08:00 WIB (01:00 UTC)
+// vercel.json: { "crons": [{ "path": "/api/cron/reminder", "schedule": "0 1 * * *" }] }
 
+export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
-  // Verify this is called by Vercel Cron (in production)
   const authHeader = req.headers.get('authorization')
   if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // In production with a real DB, query bookings departing tomorrow
-  // For now: placeholder showing the structure
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+  // Tomorrow in WIB (UTC+7)
+  const WIB = 7 * 60 * 60 * 1000
+  const tomorrowWIB = new Date(Date.now() + WIB)
+  tomorrowWIB.setUTCDate(tomorrowWIB.getUTCDate() + 1)
+  tomorrowWIB.setUTCHours(0, 0, 0, 0)
+  const tomorrowStr = `${tomorrowWIB.getUTCFullYear()}-${String(tomorrowWIB.getUTCMonth() + 1).padStart(2, '0')}-${String(tomorrowWIB.getUTCDate()).padStart(2, '0')}`
 
-  // TODO: Replace with real DB query
-  // const bookings = await db.booking.findMany({ where: { date: tomorrowStr, status: 'confirmed' } })
+  const { data: bookings, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('date', tomorrowStr)
+    .in('status', ['confirmed', 'assigned', 'dispatched'])
 
-  const mockBookings: Array<{
-    name: string; whatsapp: string; package: string; date: string
-    pickupTime: string; pickupLocation: string; driverName: string; driverPhone: string
-  }> = []
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
-  let sent = 0
+  const results = { total: bookings?.length || 0, unassigned: 0, waLinks: [] as string[] }
 
-  for (const booking of mockBookings) {
-    // Send WA reminder via Fonnte API (plug in your Fonnte token)
-    // await sendWhatsApp(booking.whatsapp, buildReminderMessage(booking))
-    sent++
+  for (const b of (bookings || [])) {
+    if (!b.driver_name) results.unassigned++
+
+    // Build WhatsApp reminder link for customer
+    const customerMsg = buildCustomerReminder(b)
+    const waCustomer = `https://wa.me/${String(b.whatsapp).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(customerMsg)}`
+    results.waLinks.push(waCustomer)
   }
 
   return NextResponse.json({
     ok: true,
     date: tomorrowStr,
-    remindersSent: sent,
-    message: `Processed ${sent} H-1 reminders for ${tomorrowStr}`,
+    bookingsFound: results.total,
+    unassigned: results.unassigned,
+    waLinks: results.waLinks,
+    message: `${results.total} bookings for ${tomorrowStr}. ${results.unassigned} still unassigned.`,
   })
 }
 
-function buildReminderMessage(booking: {
-  name: string
-  package: string
-  date: string
-  pickupTime: string
-  pickupLocation: string
-  driverName: string
-  driverPhone: string
-}) {
-  return `Halo ${booking.name}! 👋
+function buildCustomerReminder(b: Record<string, unknown>): string {
+  const name        = String(b.name || 'Traveler')
+  const pkg         = String(b.package_title || '—')
+  const date        = String(b.date || '—')
+  const pickupTime  = String(b.pickup_time || '—')
+  const pickup      = String(b.pickup_name || '—')
+  const driver      = b.driver_name ? String(b.driver_name) : null
+  const code        = String(b.code || '')
 
-Ini pengingat dari Rehan Tour & Travel.
+  return `Halo ${name.split(' ')[0]}! 👋
 
-*Trip kamu besok sudah siap!* 🌋
+Pengingat dari *Rehan Tour & Travel* — trip kamu besok sudah siap! 🌋
 
-📦 Paket: ${booking.package}
-📅 Tanggal: ${booking.date}
-⏰ Penjemputan: ${booking.pickupTime}
-📍 Lokasi jemput: ${booking.pickupLocation}
-
-🚗 Driver: ${booking.driverName}
-📞 Kontak driver: +${booking.driverPhone}
+📦 *Paket:* ${pkg}
+📅 *Tanggal:* ${date}
+⏰ *Jam Jemput:* ${pickupTime} WIB
+📍 *Lokasi Jemput:* ${pickup}
+${driver ? `🚗 *Driver:* ${driver}` : '🚗 *Driver:* Segera dikonfirmasi'}
+🎫 *Kode Booking:* ${code}
 
 *Tips persiapan:*
-- Bawa jaket tebal (suhu Bromo bisa 5–10°C)
-- Sepatu tertutup
+- Bawa jaket tebal (suhu bisa 5–10°C di pegunungan)
+- Sepatu tertutup & nyaman
 - Charge HP penuh
-- Sarapan sebelum jemput jika memungkinkan
+- Sarapan sebelum waktu jemput jika memungkinkan
+
+Track perjalananmu: https://rehan-tour-travel-prototype.vercel.app/booking/${code}
 
 Sampai jumpa besok! 🙏
 *Tim Rehan Tour & Travel*`
 }
-
-// Fonnte WA sender (uncomment & add FONNTE_TOKEN to env when ready)
-// async function sendWhatsApp(target: string, message: string) {
-//   await fetch('https://api.fonnte.com/send', {
-//     method: 'POST',
-//     headers: { Authorization: process.env.FONNTE_TOKEN! },
-//     body: new URLSearchParams({ target, message, countryCode: '62' }),
-//   })
-// }

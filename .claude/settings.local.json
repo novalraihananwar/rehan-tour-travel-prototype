@@ -33,7 +33,11 @@
       "Bash(vercel env *)",
       "Bash(git commit -m 'fix driver login fallback + light map + pickup corridor restriction *)",
       "Bash(git commit -m 'fix driver map + GPS standby broadcast + OSRM routing *)",
-      "Bash(git commit -m 'fix admin driver tracking: read from Supabase not in-memory store *)"
+      "Bash(git commit -m 'fix admin driver tracking: read from Supabase not in-memory store *)",
+      "Bash(git push *)",
+      "mcp__plugin_vercel_vercel__list_deployments",
+      "mcp__plugin_vercel_vercel__get_deployment_build_logs",
+      "Bash(git commit *)"
     ]
   }
 }
