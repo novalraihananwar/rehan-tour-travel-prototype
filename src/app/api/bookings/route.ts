@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendWhatsApp, msgBookingConfirmed } from '@/lib/whatsapp'
+import { sendEmail, emailBookingConfirmed } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,21 @@ export async function POST(req: NextRequest) {
       guests:       body.guests,
       totalUsd:     body.totalUsd || 0,
     })).catch(() => {})
+
+    // Send email confirmation to customer (non-blocking)
+    if (body.email) {
+      const { subject, html } = emailBookingConfirmed({
+        name:         body.name,
+        code:         body.code,
+        packageTitle: body.packageTitle || body.packageId,
+        date:         body.date || '—',
+        pickupTime:   body.pickupTime || '',
+        pickupName:   body.pickupName || '—',
+        guests:       body.guests,
+        totalUsd:     body.totalUsd || 0,
+      })
+      sendEmail({ to: body.email, subject, html }).catch(() => {})
+    }
 
     return NextResponse.json({ ok: true, booking: data })
   } catch (err) {

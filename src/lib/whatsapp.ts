@@ -55,6 +55,9 @@ Booking kamu berhasil diterima oleh *Rehan Tour & Travel*.
 Track booking kamu di:
 ${url}/booking/${b.code}
 
+📋 *Lihat & Print Itinerary:*
+${url}/booking/${b.code}/itinerary
+
 Tim akan menghubungi kamu untuk konfirmasi pembayaran.
 Terima kasih telah mempercayai *Rehan Tour & Travel*! 🙏`
 }
@@ -121,6 +124,9 @@ Pengingat dari *Rehan Tour & Travel* — trip kamu *besok* sudah siap! 🌋
 - Sarapan sebelum jam jemput 🍽️
 
 Track live: ${url}/booking/${b.code}
+
+📋 *Itinerary lengkap:*
+${url}/booking/${b.code}/itinerary
 
 Sampai jumpa besok! 🙏
 *Tim Rehan Tour & Travel*`

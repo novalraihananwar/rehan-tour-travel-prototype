@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { sendWhatsApp, msgH1Customer, msgH1Driver } from '@/lib/whatsapp'
+import { sendEmail, emailH1Reminder } from '@/lib/email'
 
 // Vercel Cron — runs daily at 08:00 WIB (01:00 UTC)
 // vercel.json: { "crons": [{ "path": "/api/cron/reminder", "schedule": "0 1 * * *" }] }
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
     if (d.name && d.phone) driverPhoneMap[d.name] = d.phone
   }
 
-  const results = { total: bookings?.length || 0, unassigned: 0, waSent: 0, waFailed: 0 }
+  const results = { total: bookings?.length || 0, unassigned: 0, waSent: 0, waFailed: 0, emailSent: 0 }
 
   for (const b of (bookings || [])) {
     if (!b.driver_name) results.unassigned++
@@ -56,10 +57,27 @@ export async function GET(req: NextRequest) {
       code:         String(b.code || ''),
     }
 
-    // Send to customer
+    // Send WA to customer
     if (b.whatsapp) {
       const sent = await sendWhatsApp(String(b.whatsapp), msgH1Customer(params))
       sent ? results.waSent++ : results.waFailed++
+    }
+
+    // Send email H-1 reminder to customer (non-blocking)
+    if (b.email) {
+      const { subject, html } = emailH1Reminder({
+        name:        params.name,
+        code:        params.code,
+        packageTitle: params.packageTitle,
+        date:        params.date,
+        pickupTime:  params.pickupTime,
+        pickupName:  params.pickupName,
+        driverName:  params.driverName,
+        guests:      Number(b.guests) || 1,
+      })
+      sendEmail({ to: String(b.email), subject, html })
+        .then(ok => { if (ok) results.emailSent++ })
+        .catch(() => {})
     }
 
     // Send to driver if assigned and phone available
@@ -88,7 +106,8 @@ export async function GET(req: NextRequest) {
     unassigned: results.unassigned,
     waSent: results.waSent,
     waFailed: results.waFailed,
-    message: `${results.total} bookings for ${tomorrowStr}. Sent ${results.waSent} WA messages.`,
+    emailSent: results.emailSent,
+    message: `${results.total} bookings for ${tomorrowStr}. Sent ${results.waSent} WA messages, ${results.emailSent} emails.`,
   })
 }
 
