@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { sendWhatsApp, msgBookingConfirmed } from '@/lib/whatsapp'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,18 @@ export async function POST(req: NextRequest) {
       console.error('Supabase insert error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Send WhatsApp confirmation to customer (non-blocking)
+    sendWhatsApp(body.whatsapp, msgBookingConfirmed({
+      name:         body.name,
+      code:         body.code,
+      packageTitle: body.packageTitle || body.packageId,
+      date:         body.date || '—',
+      pickupTime:   body.pickupTime || '',
+      pickupName:   body.pickupName || '—',
+      guests:       body.guests,
+      totalUsd:     body.totalUsd || 0,
+    })).catch(() => {})
 
     return NextResponse.json({ ok: true, booking: data })
   } catch (err) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { sendWhatsApp, msgH1Customer, msgH1Driver } from '@/lib/whatsapp'
 
 // Vercel Cron — runs daily at 08:00 WIB (01:00 UTC)
 // vercel.json: { "crons": [{ "path": "/api/cron/reminder", "schedule": "0 1 * * *" }] }
@@ -30,15 +31,53 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const results = { total: bookings?.length || 0, unassigned: 0, waLinks: [] as string[] }
+  // Fetch drivers table for phone numbers
+  const { data: driversDb } = await supabase
+    .from('drivers').select('name, phone')
+
+  const driverPhoneMap: Record<string, string> = {}
+  for (const d of (driversDb || [])) {
+    if (d.name && d.phone) driverPhoneMap[d.name] = d.phone
+  }
+
+  const results = { total: bookings?.length || 0, unassigned: 0, waSent: 0, waFailed: 0 }
 
   for (const b of (bookings || [])) {
     if (!b.driver_name) results.unassigned++
 
-    // Build WhatsApp reminder link for customer
-    const customerMsg = buildCustomerReminder(b)
-    const waCustomer = `https://wa.me/${String(b.whatsapp).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(customerMsg)}`
-    results.waLinks.push(waCustomer)
+    const params = {
+      name:         String(b.name || ''),
+      packageTitle: String(b.package_title || ''),
+      date:         String(b.date || ''),
+      pickupTime:   String(b.pickup_time || ''),
+      pickupName:   String(b.pickup_name || ''),
+      driverName:   b.driver_name ? String(b.driver_name) : null,
+      code:         String(b.code || ''),
+    }
+
+    // Send to customer
+    if (b.whatsapp) {
+      const sent = await sendWhatsApp(String(b.whatsapp), msgH1Customer(params))
+      sent ? results.waSent++ : results.waFailed++
+    }
+
+    // Send to driver if assigned and phone available
+    if (b.driver_name) {
+      const driverPhone = driverPhoneMap[b.driver_name]
+      if (driverPhone) {
+        const sent = await sendWhatsApp(driverPhone, msgH1Driver({
+          driverName:   String(b.driver_name),
+          customerName: String(b.name || ''),
+          packageTitle: String(b.package_title || ''),
+          date:         String(b.date || ''),
+          pickupTime:   String(b.pickup_time || ''),
+          pickupName:   String(b.pickup_name || ''),
+          guests:       Number(b.guests) || 1,
+          code:         String(b.code || ''),
+        }))
+        sent ? results.waSent++ : results.waFailed++
+      }
+    }
   }
 
   return NextResponse.json({
@@ -46,39 +85,9 @@ export async function GET(req: NextRequest) {
     date: tomorrowStr,
     bookingsFound: results.total,
     unassigned: results.unassigned,
-    waLinks: results.waLinks,
-    message: `${results.total} bookings for ${tomorrowStr}. ${results.unassigned} still unassigned.`,
+    waSent: results.waSent,
+    waFailed: results.waFailed,
+    message: `${results.total} bookings for ${tomorrowStr}. Sent ${results.waSent} WA messages.`,
   })
 }
 
-function buildCustomerReminder(b: Record<string, unknown>): string {
-  const name        = String(b.name || 'Traveler')
-  const pkg         = String(b.package_title || '—')
-  const date        = String(b.date || '—')
-  const pickupTime  = String(b.pickup_time || '—')
-  const pickup      = String(b.pickup_name || '—')
-  const driver      = b.driver_name ? String(b.driver_name) : null
-  const code        = String(b.code || '')
-
-  return `Halo ${name.split(' ')[0]}! 👋
-
-Pengingat dari *Rehan Tour & Travel* — trip kamu besok sudah siap! 🌋
-
-📦 *Paket:* ${pkg}
-📅 *Tanggal:* ${date}
-⏰ *Jam Jemput:* ${pickupTime} WIB
-📍 *Lokasi Jemput:* ${pickup}
-${driver ? `🚗 *Driver:* ${driver}` : '🚗 *Driver:* Segera dikonfirmasi'}
-🎫 *Kode Booking:* ${code}
-
-*Tips persiapan:*
-- Bawa jaket tebal (suhu bisa 5–10°C di pegunungan)
-- Sepatu tertutup & nyaman
-- Charge HP penuh
-- Sarapan sebelum waktu jemput jika memungkinkan
-
-Track perjalananmu: https://rehan-tour-travel-prototype.vercel.app/booking/${code}
-
-Sampai jumpa besok! 🙏
-*Tim Rehan Tour & Travel*`
-}

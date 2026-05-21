@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { pusherServer } from '@/lib/pusher'
 import { driverChannel } from '@/lib/pickup-times'
+import { sendWhatsApp, msgDriverDispatched } from '@/lib/whatsapp'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,8 +36,21 @@ export async function POST(req: NextRequest) {
 
     await supabase.from('bookings').update(updatePayload).eq('code', bookingCode)
 
-    // If dispatching, notify driver via Pusher
+    // If dispatching: notify driver via Pusher + WhatsApp to customer
     if (dispatch) {
+      // WhatsApp to customer
+      if (booking.whatsapp) {
+        sendWhatsApp(booking.whatsapp, msgDriverDispatched({
+          customerName: booking.name,
+          driverName,
+          packageTitle: booking.package_title,
+          date:         booking.date || '—',
+          pickupTime:   booking.pickup_time || '',
+          pickupName:   booking.pickup_name || '—',
+          code:         bookingCode,
+        })).catch(() => {})
+      }
+
       const channel = driverChannel(driverName)
       await pusherServer.trigger(channel, 'new-booking', {
         bookingCode,

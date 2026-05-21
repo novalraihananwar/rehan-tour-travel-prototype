@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { pusherServer } from '@/lib/pusher'
+import { sendWhatsApp, msgDriverAccepted } from '@/lib/whatsapp'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,12 +14,25 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'accept') {
+      // Fetch booking to get customer whatsapp
+      const { data: booking } = await supabase
+        .from('bookings').select('whatsapp, name').eq('code', bookingCode).single()
+
       await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
         .eq('code', bookingCode)
 
-      // Notify admin
+      // WhatsApp to customer
+      if (booking?.whatsapp) {
+        sendWhatsApp(booking.whatsapp, msgDriverAccepted({
+          customerName: booking.name,
+          driverName,
+          code: bookingCode,
+        })).catch(() => {})
+      }
+
+      // Notify admin via Pusher
       await pusherServer.trigger('admin-drivers', 'booking-accepted', {
         bookingCode, driverName, timestamp: Date.now(),
       })
