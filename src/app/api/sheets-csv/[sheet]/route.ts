@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { tourPackages } from '@/lib/data'
 
+export const dynamic = 'force-dynamic'
+
 // WIB = UTC+7
 const WIB = 7 * 60 * 60 * 1000
 
@@ -141,7 +143,7 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
     case 'ringkasan': {
       const { data: bookings } = await supabase.from('bookings').select('total_usd, status, created_at, guests')
 
-      const wibMidnight = new Date()
+      const wibMidnight = new Date(Date.now() + WIB)
       wibMidnight.setUTCHours(0, 0, 0, 0)
       const todayISO = new Date(wibMidnight.getTime() - WIB).toISOString()
 

@@ -55,7 +55,7 @@ function mapRow(b: Record<string, unknown>): Booking {
     pickupAddress: String(b.pickup_address || ''),
     date: String(b.date || '—'),
     pickupTime: String(b.pickup_time || ''),
-    guests: Number(b.guests) || 1, total, paid: derivePaid(status, total),
+    guests: Number(b.guests) || 0, total, paid: derivePaid(status, total),
     status: capitalize(status), country: '🌍', vehicle: 'TBD',
     created: b.created_at ? String(b.created_at).slice(0, 10) : '—',
     specialRequest: String(b.special_request || '—'),

@@ -10,7 +10,7 @@ export async function GET() {
     // Bookings stats
     const { data: bookings } = await supabase
       .from('bookings')
-      .select('code, name, total_usd, status, created_at, package_title, payment_method')
+      .select('code, name, total_usd, status, created_at, package_title, payment_method, guests')
 
     const totalBookings  = bookings?.length || 0
     // BUG-7: sertakan status assigned dan dispatched dalam confirmed count
@@ -67,6 +67,7 @@ export async function GET() {
       totalBookings, confirmedCount, pendingCount,
       totalRevenue, todayBookings, todayRevenue,
       driversOnTrip, driversAvail, totalDrivers: latestDrivers.length,
+      totalGuests: bookings?.reduce((s, b) => s + (Number(b.guests) || 0), 0) || 0,
       packageStats, recentBookings: recent,
     })
   } catch {
