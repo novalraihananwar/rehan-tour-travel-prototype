@@ -1,19 +1,44 @@
-const BASE_URL = 'https://api.fonnte.com'
-const TOKEN    = process.env.FONNTE_TOKEN
+const TOKEN       = process.env.FONNTE_TOKEN
+const RELAY_URL   = process.env.FONNTE_RELAY_URL   // Cloudflare Worker URL
+const RELAY_SECRET = process.env.RELAY_SECRET       // Optional security secret
 
 export async function sendWhatsApp(phone: string, message: string): Promise<boolean> {
-  if (!TOKEN) {
-    console.warn('[WA] FONNTE_TOKEN not set — message not sent to', phone)
+  if (!TOKEN && !RELAY_URL) {
+    console.warn('[WA] Neither FONNTE_TOKEN nor FONNTE_RELAY_URL set — skipping', phone)
     return false
   }
 
-  // Normalize: strip non-digits, remove leading 0, prepend 62
   const normalized = phone.replace(/[^0-9]/g, '').replace(/^0/, '62')
 
-  // Try JSON first, fallback to FormData
-  const attempts: Array<() => Promise<Response>> = [
-    // Attempt 1: JSON body
-    () => fetch(`${BASE_URL}/send`, {
+  // Use Cloudflare relay if available (bypasses Fonnte IP blocking on Vercel)
+  if (RELAY_URL) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (RELAY_SECRET) headers['X-Relay-Secret'] = RELAY_SECRET
+
+      const res = await fetch(RELAY_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ target: normalized, message, countryCode: '62' }),
+      })
+      const text = await res.text()
+      let data: Record<string, unknown> = {}
+      try { data = JSON.parse(text) } catch { data = { raw: text } }
+      if (data.status) {
+        console.log('[WA] Sent via relay to', normalized)
+        return true
+      }
+      console.error('[WA] Relay error:', data)
+      return false
+    } catch (e) {
+      console.error('[WA] Relay fetch failed:', (e as Error).message)
+      return false
+    }
+  }
+
+  // Direct Fonnte call (works locally, blocked on Vercel by IP)
+  try {
+    const res = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
       headers: {
         Authorization: TOKEN!,
@@ -21,48 +46,17 @@ export async function sendWhatsApp(phone: string, message: string): Promise<bool
         'User-Agent': 'RehanTour/1.0',
       },
       body: JSON.stringify({ target: normalized, message, countryCode: '62' }),
-    }),
-    // Attempt 2: FormData
-    () => {
-      const form = new FormData()
-      form.append('target', normalized)
-      form.append('message', message)
-      form.append('countryCode', '62')
-      return fetch(`${BASE_URL}/send`, {
-        method: 'POST',
-        headers: { Authorization: TOKEN!, 'User-Agent': 'RehanTour/1.0' },
-        body: form,
-      })
-    },
-    // Attempt 3: URLSearchParams (original)
-    () => fetch(`${BASE_URL}/send`, {
-      method: 'POST',
-      headers: {
-        Authorization: TOKEN!,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'RehanTour/1.0',
-      },
-      body: new URLSearchParams({ target: normalized, message, countryCode: '62' }),
-    }),
-  ]
-
-  for (let i = 0; i < attempts.length; i++) {
-    try {
-      const res = await attempts[i]()
-      const text = await res.text()
-      console.log(`[WA] Attempt ${i + 1} status:`, res.status, text.slice(0, 200))
-      let data: Record<string, unknown> = {}
-      try { data = JSON.parse(text) } catch { data = { raw: text } }
-      if (res.ok && data.status) return true
-      if (i === attempts.length - 1) {
-        console.error('[WA] All attempts failed. Last response:', data)
-      }
-    } catch (e) {
-      console.error(`[WA] Attempt ${i + 1} error:`, (e as Error).message)
-      if (i === attempts.length - 1) return false
-    }
+    })
+    const text = await res.text()
+    let data: Record<string, unknown> = {}
+    try { data = JSON.parse(text) } catch { data = { raw: text } }
+    if (data.status) return true
+    console.error('[WA] Fonnte error:', data)
+    return false
+  } catch (e) {
+    console.error('[WA] Fonnte direct failed:', (e as Error).message)
+    return false
   }
-  return false
 }
 
 // ── Message builders ────────────────────────────────────────────────────────
