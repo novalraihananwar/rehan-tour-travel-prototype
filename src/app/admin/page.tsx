@@ -90,11 +90,12 @@ const colorMap: Record<string, string> = {
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
-    Confirmed: 'bg-jungle/15 text-jungle-light border-jungle/25',
-    Pending: 'bg-gold/15 text-gold border-gold/25',
-    Cancelled: 'bg-lava/15 text-lava border-lava/25',
+    confirmed: 'bg-jungle/15 text-jungle-light border-jungle/25',
+    pending:   'bg-gold/15 text-gold border-gold/25',
+    partial:   'bg-ocean/15 text-ocean-light border-ocean/25',
+    cancelled: 'bg-lava/15 text-lava border-lava/25',
   }
-  return map[status] || 'bg-white/8 text-cream-muted border-white/10'
+  return map[status?.toLowerCase()] || 'bg-white/8 text-cream-muted border-white/10'
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -151,7 +152,7 @@ export default function AdminOverview() {
       }
     }
     fetchStats()
-    const interval = setInterval(fetchStats, 30000)
+    const interval = setInterval(fetchStats, 10000)
     return () => clearInterval(interval)
   }, [])
 
@@ -165,7 +166,7 @@ export default function AdminOverview() {
         </div>
         <div className="flex items-center gap-2 text-xs text-jungle-light bg-jungle/10 border border-jungle/20 px-3 py-1.5 rounded-full">
           <div className="w-1.5 h-1.5 rounded-full bg-jungle-light animate-pulse" />
-          Live — updates every 30s
+          Live — updates every 10s
         </div>
       </div>
 
@@ -334,11 +335,14 @@ export default function AdminOverview() {
                 </tr>
               </thead>
               <tbody>
-                {(stats?.recentBookings || recentBookings.map(b => ({
-                  code: b.code, name: b.name, package_title: b.package,
-                  date: b.date, guests: b.guests, total_usd: b.total,
-                  status: b.status, created_at: b.date || '',
-                }))).map((b, i) => (
+                {!stats && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-cream-muted text-xs">
+                      Loading...
+                    </td>
+                  </tr>
+                )}
+                {stats?.recentBookings.map((b, i) => (
                   <tr key={b.code || i} className="border-b border-white/3 hover:bg-white/2 transition-colors">
                     <td className="py-3 px-4 font-mono text-cream-muted text-xs">{b.code || '—'}</td>
                     <td className="py-3 px-4">
@@ -348,18 +352,20 @@ export default function AdminOverview() {
                     <td className="py-3 px-4 text-cream-muted">
                       {b.created_at ? new Date(b.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-gold font-medium">${b.total_usd}</td>
+                    <td className="py-3 px-4 text-gold font-medium">
+                      {Number(b.total_usd) > 0 ? `$${Number(b.total_usd).toFixed(0)}` : <span className="text-cream-muted text-[11px]">TBD</span>}
+                    </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded-full text-xs border font-medium ${statusBadge(b.status)}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs border font-medium capitalize ${statusBadge(b.status)}`}>
                         {b.status}
                       </span>
                     </td>
                   </tr>
                 ))}
-                {stats && stats.recentBookings.length === 0 && (
+                {stats?.recentBookings.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-cream-muted text-xs">
-                      Belum ada booking. Booking dari form akan muncul di sini.
+                      No bookings yet — they appear here once customers book.
                     </td>
                   </tr>
                 )}

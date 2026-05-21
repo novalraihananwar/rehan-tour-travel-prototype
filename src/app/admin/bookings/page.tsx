@@ -76,15 +76,18 @@ export default function BookingsPage() {
   const [selected, setSelected] = useState<string | null>(null)
 
   useEffect(() => {
-    async function load() {
+    async function load(silent = false) {
+      if (!silent) setLoading(true)
       const { data, error } = await supabase
         .from('bookings')
         .select('*')
         .order('created_at', { ascending: false })
       if (!error && data) setBookings(data.map(mapRow))
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
     load()
+    const interval = setInterval(() => load(true), 10000)
+    return () => clearInterval(interval)
   }, [])
 
   const statuses = ['All', 'Confirmed', 'Pending', 'Partial', 'Cancelled']
