@@ -23,9 +23,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen]   = useState(false)
   const [isAuth, setIsAuth]             = useState<boolean | null>(null)
-  const [newBookings, setNewBookings]   = useState(0)
-  const [pendingCount, setPendingCount] = useState(0)
-  const [searchQuery, setSearchQuery]   = useState('')
+  const [newBookings, setNewBookings]         = useState(0)
+  const [pendingCount, setPendingCount]       = useState(0)
+  const [pendingDriversCount, setPendingDriversCount] = useState(0)
+  const [searchQuery, setSearchQuery]         = useState('')
 
   // Auth check
   useEffect(() => {
@@ -54,6 +55,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       } catch (err) {
         console.error('[AdminLayout] badge fetch error:', err)
       }
+      // Fetch pending driver registrations
+      fetch('/api/admin/driver-approval', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : { drivers: [] })
+        .then(d => setPendingDriversCount((d.drivers || []).length))
+        .catch(() => {})
     }
     computeBadge()
     const interval = setInterval(computeBadge, 15000)
@@ -119,7 +125,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <p className="text-xs text-cream-muted uppercase tracking-widest px-3 mb-3">Management</p>
           {NAV_BASE.map((item) => {
             const active = isActive(item.href, item.exact)
-            const badge  = item.href === '/admin/bookings' && newBookings > 0 ? String(newBookings) : undefined
+            const badge  = item.href === '/admin/bookings' && newBookings > 0
+            ? String(newBookings)
+            : item.href === '/admin/fleet' && pendingDriversCount > 0
+              ? String(pendingDriversCount)
+              : undefined
             return (
               <Link
                 key={item.href}
@@ -200,7 +210,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <nav className="flex-1 px-3 py-4 space-y-1">
                 {NAV_BASE.map((item) => {
                   const active = isActive(item.href, item.exact)
-                  const badge  = item.href === '/admin/bookings' && newBookings > 0 ? String(newBookings) : undefined
+                  const badge  = item.href === '/admin/bookings' && newBookings > 0
+            ? String(newBookings)
+            : item.href === '/admin/fleet' && pendingDriversCount > 0
+              ? String(pendingDriversCount)
+              : undefined
                   return (
                     <Link
                       key={item.href}

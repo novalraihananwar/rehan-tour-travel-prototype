@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle, Wrench, Zap, ShieldAlert, Bell, Clock, Users, Package, X } from 'lucide-react'
+import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle, Wrench, Zap, ShieldAlert, Bell, Clock, Users, Package, X, Calendar } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
 import { driverChannel } from '@/lib/pickup-times'
 
@@ -24,6 +24,11 @@ export default function DriverDashboard() {
   const [gpsStatus, setGpsStatus]     = useState<GpsStatus>('checking')
   const [gpsCoords, setGpsCoords]     = useState<{ lat: number; lng: number } | null>(null)
   const [currentStatus, setCurrentStatus] = useState<string>('available')
+  const [schedule, setSchedule] = useState<Array<{
+    code: string; packageTitle: string; date: string
+    pickupTime: string; pickupName: string; guests: number; status: string
+  }>>([])
+  const [scheduleLoading, setScheduleLoading] = useState(true)
 
   // Incoming booking notification
   const [incomingBooking, setIncomingBooking] = useState<{
@@ -153,6 +158,24 @@ export default function DriverDashboard() {
       }, 1000)
     })
     return () => { ch.unbind_all(); client.unsubscribe(driverChannel(session.name)) }
+  }, [session])
+
+  useEffect(() => {
+    if (!session) return
+    const fetchSchedule = async () => {
+      try {
+        const res = await fetch(`/api/driver/schedule?driverName=${encodeURIComponent(session.name)}`)
+        const data = await res.json()
+        if (data.ok) setSchedule(data.trips || [])
+      } catch {
+        // silently ignore network errors
+      } finally {
+        setScheduleLoading(false)
+      }
+    }
+    fetchSchedule()
+    const interval = setInterval(fetchSchedule, 60000)
+    return () => clearInterval(interval)
   }, [session])
 
   const handleAccept = async () => {
@@ -413,6 +436,68 @@ export default function DriverDashboard() {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+        </div>
+
+        {/* Jadwal Saya */}
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-5 h-5 text-sunset" />
+            <h2 className="text-sm font-medium text-cream">Jadwal Saya</h2>
+          </div>
+
+          {scheduleLoading ? (
+            <div className="space-y-3">
+              {[0, 1].map(i => (
+                <div key={i} className="animate-pulse rounded-xl bg-white/5 h-16" />
+              ))}
+            </div>
+          ) : schedule.length === 0 ? (
+            <p className="text-xs text-cream-muted text-center py-4">Belum ada jadwal trip</p>
+          ) : (
+            <div className="space-y-3">
+              {schedule.map(trip => {
+                const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000)
+                const tomorrowWib = new Date(nowWib)
+                tomorrowWib.setDate(tomorrowWib.getDate() + 1)
+                const tomorrowStr = tomorrowWib.toISOString().slice(0, 10)
+                const isTomorrow = trip.date === tomorrowStr
+
+                const statusBadge =
+                  trip.status === 'dispatched'
+                    ? 'bg-sunset/20 text-sunset border-sunset/30'
+                    : trip.status === 'confirmed'
+                    ? 'bg-ocean/20 text-ocean-light border-ocean/30'
+                    : 'bg-gold/20 text-gold border-gold/30'
+
+                return (
+                  <div key={trip.code} className="p-3 rounded-xl bg-white/5 border border-white/8 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-cream">{trip.date}</span>
+                        {isTomorrow && (
+                          <span className="text-[10px] text-gold font-medium">Besok</span>
+                        )}
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${statusBadge}`}>
+                        {trip.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3 h-3 text-cream-muted shrink-0" />
+                      <span className="text-sunset font-mono text-xs font-bold">{trip.pickupTime || '—'}</span>
+                      <span className="text-cream-muted text-xs">· {trip.pickupName}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-cream truncate">{trip.packageTitle}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-cream-muted shrink-0">
+                        <Users className="w-3 h-3" />{trip.guests}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Vehicle info */}

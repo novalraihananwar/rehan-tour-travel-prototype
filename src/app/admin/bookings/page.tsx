@@ -37,6 +37,14 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
+function getVehicleRecommendation(guests: number): { label: string; options: string[]; note: string } {
+  if (guests <= 2) return { label: '1–2 Tamu', options: ['Toyota Avanza', 'Toyota Innova'], note: 'Sedan/MPV standar' }
+  if (guests <= 4) return { label: '3–4 Tamu', options: ['Toyota Avanza', 'Toyota Innova', 'Toyota Innova Reborn'], note: 'MPV keluarga' }
+  if (guests <= 7) return { label: '5–7 Tamu', options: ['Toyota Innova Reborn', 'Toyota HiAce'], note: 'MPV besar atau minibus' }
+  if (guests <= 14) return { label: '8–14 Tamu', options: ['Toyota HiAce', 'Isuzu Elf'], note: 'Minibus atau medium bus' }
+  return { label: '15+ Tamu', options: ['Isuzu Elf', 'Bus Pariwisata'], note: 'Bus besar diperlukan' }
+}
+
 function derivePaid(status: string, total: number): number {
   const s = status?.toLowerCase()
   if (s === 'confirmed' || s === 'assigned' || s === 'dispatched') return total
@@ -168,6 +176,27 @@ function AssignModal({ booking, drivers, onAssign, onClose }: AssignModalProps) 
             </p>
           )}
         </div>
+
+        {/* Vehicle recommendation */}
+        {(() => {
+          const rec = getVehicleRecommendation(booking.guests)
+          return (
+            <div className="glass-card rounded-xl p-4 mb-5 border-gold/15">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-medium text-gold uppercase tracking-wider">Rekomendasi Kendaraan</span>
+                <span className="text-[10px] text-cream-muted bg-volcanic-400 px-1.5 py-0.5 rounded-full">{rec.label}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {rec.options.map(opt => (
+                  <span key={opt} className="text-xs px-2.5 py-1 rounded-full bg-gold/10 border border-gold/25 text-gold font-medium">
+                    {opt}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-cream-muted">{rec.note} · {booking.guests} tamu</p>
+            </div>
+          )
+        })()}
 
         {/* Dispatch toggle */}
         <div

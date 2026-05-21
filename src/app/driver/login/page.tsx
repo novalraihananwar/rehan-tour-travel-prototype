@@ -148,6 +148,16 @@ export default function DriverLoginPage() {
         <p className="text-center text-xs text-cream-muted mt-2">
           Lupa PIN? Hubungi admin Rehan Tour &amp; Travel
         </p>
+
+        <p className="text-center text-xs text-cream-muted mt-3">
+          Belum punya akun?{' '}
+          <button
+            onClick={() => router.push('/driver/register')}
+            className="text-gold hover:underline"
+          >
+            Daftar sebagai driver
+          </button>
+        </p>
       </motion.div>
     </div>
   )

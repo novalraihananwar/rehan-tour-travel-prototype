@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import {
   Truck, MapPin, Phone, CheckCircle, AlertCircle,
   Clock, Wrench, Navigation, Users, RefreshCw, ExternalLink, Copy, Check as CheckIcon, Calendar,
+  Plus, Trash2,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
 import 'leaflet/dist/leaflet.css'
@@ -54,13 +55,25 @@ export default function FleetPage() {
   const [liveDrivers, setLiveDrivers]   = useState<LiveDriver[]>([])
   const [filterStatus, setFilterStatus] = useState('All')
   const [searchQ, setSearchQ]           = useState('')
-  const [view, setView]                 = useState<'map' | 'list' | 'schedule'>('map')
+  const [view, setView]                 = useState<'map' | 'list' | 'schedule' | 'armada' | 'pendaftaran'>('map')
   const [lastRefresh, setLastRefresh]   = useState(new Date())
   const [copied, setCopied]             = useState(false)
   const [schedule, setSchedule]         = useState<Record<string, Array<{
     code: string; packageTitle: string; date: string
     pickupTime: string; guests: number; status: string; customerName: string
   }>>>({})
+  const [vehicles, setVehicles] = useState<Array<{
+    id: string; name: string; type: string; plate: string
+    capacity: number; status: string; notes: string | null
+  }>>([])
+  const [pendingDrivers, setPendingDrivers] = useState<Array<{
+    id: string; username: string; name: string; phone: string
+    vehicle_type: string | null; status: string; created_at: string
+  }>>([])
+  const [vehicleForm, setVehicleForm] = useState({ name: '', type: '', plate: '', capacity: 4, notes: '' })
+  const [showVehicleForm, setShowVehicleForm] = useState(false)
+  const [savingVehicle, setSavingVehicle] = useState(false)
+  const [approvingId, setApprovingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (view !== 'schedule') return
@@ -68,6 +81,15 @@ export default function FleetPage() {
     fetch('/api/admin/driver-schedule', { cache: 'no-store', signal: controller.signal })
       .then(r => r.json()).then(setSchedule).catch(() => {})
     return () => controller.abort()
+  }, [view])
+
+  useEffect(() => {
+    if (view === 'armada') {
+      fetch('/api/admin/vehicles').then(r => r.json()).then(d => setVehicles(d.vehicles || []))
+    }
+    if (view === 'pendaftaran') {
+      fetch('/api/admin/driver-approval').then(r => r.json()).then(d => setPendingDrivers(d.drivers || []))
+    }
   }, [view])
 
   const driverLoginUrl = typeof window !== 'undefined'
@@ -174,13 +196,20 @@ export default function FleetPage() {
             Refresh
           </button>
           <div className="flex rounded-xl overflow-hidden border border-white/10">
-            {([['map', 'Peta Live'], ['list', 'Daftar'], ['schedule', 'Jadwal']] as const).map(([v, label]) => (
+            {(
+              [['map', 'Peta Live'], ['list', 'Daftar'], ['schedule', 'Jadwal'], ['armada', 'Armada'], ['pendaftaran', 'Pendaftaran']] as [string, string][]
+            ).map(([v, label]) => (
               <button
                 key={v}
-                onClick={() => setView(v)}
-                className={`px-4 py-2 text-xs font-medium transition-all ${view === v ? 'bg-sunset text-volcanic' : 'text-cream-muted hover:text-cream'}`}
+                onClick={() => setView(v as 'map' | 'list' | 'schedule' | 'armada' | 'pendaftaran')}
+                className={`px-4 py-2 text-xs font-medium transition-all relative ${view === v ? 'bg-sunset text-volcanic' : 'text-cream-muted hover:text-cream'}`}
               >
                 {label}
+                {v === 'pendaftaran' && pendingDrivers.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-lava text-white text-[10px] font-bold flex items-center justify-center">
+                    {pendingDrivers.length > 9 ? '9+' : pendingDrivers.length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -420,6 +449,212 @@ export default function FleetPage() {
                 </div>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {view === 'armada' && (
+        <div className="space-y-4">
+          {/* Header + Add button */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-cream-muted">{vehicles.length} kendaraan terdaftar</p>
+            <button
+              onClick={() => setShowVehicleForm(!showVehicleForm)}
+              className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Tambah Kendaraan
+            </button>
+          </div>
+
+          {/* Add vehicle form (collapsible) */}
+          {showVehicleForm && (
+            <div className="glass-card rounded-2xl p-5 space-y-4 border-sunset/20">
+              <h3 className="text-sm font-medium text-cream">Tambah Kendaraan Baru</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-1.5">Nama Kendaraan</label>
+                  <input value={vehicleForm.name} onChange={e => setVehicleForm(f => ({...f, name: e.target.value}))}
+                    placeholder="Toyota HiAce 1" className="input-dark w-full text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-1.5">Tipe</label>
+                  <select value={vehicleForm.type} onChange={e => setVehicleForm(f => ({...f, type: e.target.value}))}
+                    className="input-dark w-full text-sm appearance-none">
+                    <option value="">Pilih tipe...</option>
+                    {['Avanza','Innova','Innova Reborn','HiAce','L300','Elf','Bus Pariwisata'].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-1.5">Nomor Plat</label>
+                  <input value={vehicleForm.plate} onChange={e => setVehicleForm(f => ({...f, plate: e.target.value.toUpperCase()}))}
+                    placeholder="W 1234 AB" className="input-dark w-full text-sm font-mono tracking-widest" />
+                </div>
+                <div>
+                  <label className="text-xs text-cream-muted uppercase tracking-wider block mb-1.5">Kapasitas (orang)</label>
+                  <input type="number" min={1} max={50} value={vehicleForm.capacity}
+                    onChange={e => setVehicleForm(f => ({...f, capacity: Number(e.target.value)}))}
+                    className="input-dark w-full text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-cream-muted uppercase tracking-wider block mb-1.5">Catatan (opsional)</label>
+                <input value={vehicleForm.notes} onChange={e => setVehicleForm(f => ({...f, notes: e.target.value}))}
+                  placeholder="Warna putih, AC double blower..." className="input-dark w-full text-sm" />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={async () => {
+                  if (!vehicleForm.name || !vehicleForm.type || !vehicleForm.plate) return
+                  setSavingVehicle(true)
+                  try {
+                    const res = await fetch('/api/admin/vehicles', {
+                      method: 'POST', headers: {'Content-Type':'application/json'},
+                      body: JSON.stringify(vehicleForm)
+                    })
+                    const d = await res.json()
+                    if (d.vehicle) {
+                      setVehicles(prev => [d.vehicle, ...prev])
+                      setVehicleForm({ name:'', type:'', plate:'', capacity:4, notes:'' })
+                      setShowVehicleForm(false)
+                    }
+                  } finally { setSavingVehicle(false) }
+                }} disabled={savingVehicle} className="btn-primary text-xs px-4 py-2">
+                  {savingVehicle ? 'Menyimpan...' : 'Simpan Kendaraan'}
+                </button>
+                <button onClick={() => setShowVehicleForm(false)}
+                  className="border border-white/10 text-cream-muted hover:text-cream rounded-xl px-4 py-2 transition-colors text-xs">
+                  Batal
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Vehicle cards grid */}
+          {vehicles.length === 0 ? (
+            <div className="glass-card rounded-2xl py-16 text-center text-cream-muted text-sm">
+              Belum ada kendaraan. Klik &quot;Tambah Kendaraan&quot; untuk mendaftarkan armada.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {vehicles.map(v => (
+                <div key={v.id} className="glass-card rounded-2xl overflow-hidden">
+                  <div className={`px-4 py-2.5 flex items-center justify-between border-b border-white/5 ${
+                    v.status === 'available' ? 'bg-jungle/10' : v.status === 'on_trip' ? 'bg-sunset/10' : 'bg-white/5'
+                  }`}>
+                    <span className={`text-xs font-medium ${
+                      v.status === 'available' ? 'text-jungle-light' : v.status === 'on_trip' ? 'text-sunset' : 'text-cream-muted'
+                    }`}>
+                      {v.status === 'available' ? '● Tersedia' : v.status === 'on_trip' ? '● On Trip' : '● Maintenance'}
+                    </span>
+                    <span className="font-mono text-xs text-cream-muted">{v.plate}</span>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm font-medium text-cream mb-0.5">{v.name}</p>
+                    <p className="text-xs text-cream-muted mb-3">{v.type} · Maks {v.capacity} penumpang</p>
+                    {v.notes && <p className="text-[11px] text-cream-muted mb-3 italic">{v.notes}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={async () => {
+                        const newStatus = v.status === 'available' ? 'maintenance' : 'available'
+                        await fetch('/api/admin/vehicles', {
+                          method: 'PATCH', headers:{'Content-Type':'application/json'},
+                          body: JSON.stringify({ id: v.id, status: newStatus })
+                        })
+                        setVehicles(prev => prev.map(x => x.id === v.id ? {...x, status: newStatus} : x))
+                      }} className="flex-1 text-xs py-1.5 rounded-lg border border-white/10 text-cream-muted hover:text-cream hover:border-white/25 transition-colors">
+                        {v.status === 'available' ? 'Set Maintenance' : 'Set Tersedia'}
+                      </button>
+                      {v.status === 'available' && (
+                        <button onClick={async () => {
+                          if (!confirm(`Hapus ${v.name}?`)) return
+                          const res = await fetch('/api/admin/vehicles', {
+                            method: 'DELETE', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({ id: v.id })
+                          })
+                          const d = await res.json()
+                          if (d.ok) setVehicles(prev => prev.filter(x => x.id !== v.id))
+                          else alert(d.error || 'Gagal hapus')
+                        }} className="p-1.5 rounded-lg border border-lava/20 text-lava/60 hover:text-lava hover:border-lava/40 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {view === 'pendaftaran' && (
+        <div className="space-y-4">
+          <p className="text-sm text-cream-muted">{pendingDrivers.length} pendaftaran menunggu review</p>
+          {pendingDrivers.length === 0 ? (
+            <div className="glass-card rounded-2xl py-16 text-center text-cream-muted text-sm">
+              Tidak ada pendaftaran driver baru.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingDrivers.map(d => (
+                <div key={d.id} className="glass-card rounded-2xl p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sunset/60 to-gold/60 flex items-center justify-center text-volcanic font-bold text-sm shrink-0">
+                        {d.name[0]?.toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-cream">{d.name}</p>
+                        <p className="text-xs text-cream-muted font-mono">@{d.username}</p>
+                        {d.phone && <p className="text-xs text-jungle-light">{d.phone}</p>}
+                        <p className="text-[11px] text-cream-muted mt-0.5">
+                          Daftar: {new Date(d.created_at).toLocaleDateString('id-ID')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        disabled={approvingId === d.id}
+                        onClick={async () => {
+                          setApprovingId(d.id)
+                          try {
+                            const res = await fetch('/api/admin/driver-approval', {
+                              method: 'PATCH', headers:{'Content-Type':'application/json'},
+                              body: JSON.stringify({ driverId: d.id, action: 'reject' })
+                            })
+                            const data = await res.json()
+                            if (data.ok) setPendingDrivers(prev => prev.filter(x => x.id !== d.id))
+                            else alert(data.error || 'Gagal reject')
+                          } finally { setApprovingId(null) }
+                        }}
+                        className="px-3 py-1.5 text-xs rounded-xl border border-lava/30 text-lava hover:bg-lava/10 transition-colors disabled:opacity-50"
+                      >
+                        Tolak
+                      </button>
+                      <button
+                        disabled={approvingId === d.id}
+                        onClick={async () => {
+                          setApprovingId(d.id)
+                          try {
+                            const res = await fetch('/api/admin/driver-approval', {
+                              method: 'PATCH', headers:{'Content-Type':'application/json'},
+                              body: JSON.stringify({ driverId: d.id, action: 'approve' })
+                            })
+                            const data = await res.json()
+                            if (data.ok) setPendingDrivers(prev => prev.filter(x => x.id !== d.id))
+                            else alert(data.error || 'Gagal approve')
+                          } finally { setApprovingId(null) }
+                        }}
+                        className="px-3 py-1.5 text-xs rounded-xl bg-jungle/20 border border-jungle/30 text-jungle-light hover:bg-jungle/30 transition-colors disabled:opacity-50"
+                      >
+                        {approvingId === d.id ? 'Proses...' : 'Setujui'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
