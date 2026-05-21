@@ -137,7 +137,21 @@ export default function AdminDriverMap({ initialDrivers = [] }: Props) {
     return () => { if (mapInst.current) { mapInst.current.remove(); mapInst.current = null } }
   }, [])
 
-  // Update markers when drivers state changes
+  // Sync when initialDrivers prop changes (fleet page polling every 10s)
+  useEffect(() => {
+    if (initialDrivers.length === 0) return
+    initialDrivers.forEach(d => updateMarker(d))
+    setDrivers(prev => {
+      const map = new Map(prev.map(d => [d.driverName, d]))
+      initialDrivers.forEach(d => {
+        const existing = map.get(d.driverName)
+        if (!existing || d.updatedAt >= existing.updatedAt) map.set(d.driverName, d)
+      })
+      return Array.from(map.values())
+    })
+  }, [initialDrivers])
+
+  // Update markers when drivers state changes (Pusher real-time)
   useEffect(() => {
     drivers.forEach(d => updateMarker(d))
   }, [drivers])

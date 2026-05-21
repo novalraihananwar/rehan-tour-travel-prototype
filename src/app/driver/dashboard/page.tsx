@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle } from 'lucide-react'
+import { Navigation, LogOut, Truck, ArrowRight, Search, MapPin, AlertCircle, CheckCircle, Wrench, Zap, ShieldAlert } from 'lucide-react'
 
 interface DriverSession {
   username: string
@@ -21,6 +21,7 @@ export default function DriverDashboard() {
   const [error, setError]             = useState('')
   const [gpsStatus, setGpsStatus]     = useState<GpsStatus>('checking')
   const [gpsCoords, setGpsCoords]     = useState<{ lat: number; lng: number } | null>(null)
+  const [currentStatus, setCurrentStatus] = useState<string>('available')
 
   useEffect(() => {
     const raw = localStorage.getItem('driver_session')
@@ -74,10 +75,11 @@ export default function DriverDashboard() {
 
   const standbyIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  const startStandbyBroadcast = (initialCoords: { lat: number; lng: number }) => {
+  const startStandbyBroadcast = (initialCoords: { lat: number; lng: number }, status = 'available') => {
     if (standbyIntervalRef.current) clearInterval(standbyIntervalRef.current)
+    setCurrentStatus(status)
 
-    const broadcast = (coords: { lat: number; lng: number }) => {
+    const broadcast = (coords: { lat: number; lng: number }, s: string) => {
       if (!session) return
       fetch('/api/driver/location', {
         method: 'POST',
@@ -86,26 +88,31 @@ export default function DriverDashboard() {
           bookingCode: 'STANDBY',
           lat: coords.lat,
           lng: coords.lng,
-          status: 'available',
+          status: s,
           driverName: session.name,
           vehicle: session.vehicle,
         }),
       }).catch(() => {})
     }
 
-    broadcast(initialCoords)
+    broadcast(initialCoords, status)
 
     standbyIntervalRef.current = setInterval(() => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
           setGpsCoords(c)
-          broadcast(c)
+          broadcast(c, status)
         },
         () => {},
         { enableHighAccuracy: true, timeout: 8000 }
       )
     }, 15000)
+  }
+
+  const reportCondition = (status: string) => {
+    if (!gpsCoords) return
+    startStandbyBroadcast(gpsCoords, status)
   }
 
   useEffect(() => {
@@ -263,9 +270,84 @@ export default function DriverDashboard() {
           <div className="w-10 h-10 rounded-xl bg-volcanic-400 flex items-center justify-center shrink-0">
             <Truck className="w-5 h-5 text-cream-muted" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-xs text-cream-muted">Kendaraan assigned</p>
             <p className="text-sm font-medium text-cream font-mono">{session.vehicle}</p>
+          </div>
+          {/* Current status badge */}
+          <div className={`text-xs px-2.5 py-1 rounded-full border font-medium ${
+            currentStatus === 'available'        ? 'bg-jungle/15 text-jungle-light border-jungle/25'
+            : currentStatus === 'vehicle-problem'? 'bg-gold/20 text-gold border-gold/40'
+            : currentStatus === 'service'        ? 'bg-white/8 text-cream-muted border-white/15'
+            : currentStatus === 'accident'       ? 'bg-lava/25 text-lava border-lava/50'
+            : 'bg-white/8 text-cream-muted border-white/15'
+          }`}>
+            {currentStatus === 'available' ? '✓ Normal'
+              : currentStatus === 'vehicle-problem' ? '⚠ Kend. Masalah'
+              : currentStatus === 'service' ? '🔧 Service'
+              : currentStatus === 'accident' ? '🚨 Darurat'
+              : currentStatus}
+          </div>
+        </div>
+
+        {/* Laporkan kondisi */}
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldAlert className="w-4 h-4 text-gold" />
+            <h2 className="text-sm font-medium text-cream">Laporkan Kondisi</h2>
+          </div>
+          <p className="text-xs text-cream-muted mb-4 leading-relaxed">
+            Kalau ada masalah di jalan, tekan tombol sesuai kondisi. Admin akan langsung melihat statusmu berubah.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => reportCondition('vehicle-problem')}
+              disabled={!gpsCoords}
+              className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                currentStatus === 'vehicle-problem'
+                  ? 'bg-gold/20 border-gold/40 text-gold'
+                  : 'border-white/10 text-cream-muted hover:border-gold/30 hover:text-cream'
+              }`}
+            >
+              <Wrench className="w-4 h-4 shrink-0" />
+              <span>Kendaraan<br /><span className="text-xs font-normal">Bermasalah</span></span>
+            </button>
+            <button
+              onClick={() => reportCondition('service')}
+              disabled={!gpsCoords}
+              className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                currentStatus === 'service'
+                  ? 'bg-white/12 border-white/25 text-cream'
+                  : 'border-white/10 text-cream-muted hover:border-white/25 hover:text-cream'
+              }`}
+            >
+              <Truck className="w-4 h-4 shrink-0" />
+              <span>Sedang<br /><span className="text-xs font-normal">Service</span></span>
+            </button>
+            <button
+              onClick={() => reportCondition('accident')}
+              disabled={!gpsCoords}
+              className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                currentStatus === 'accident'
+                  ? 'bg-lava/25 border-lava/50 text-lava'
+                  : 'border-white/10 text-cream-muted hover:border-lava/40 hover:text-lava'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <span>Kecelakaan<br /><span className="text-xs font-normal">/ Darurat</span></span>
+            </button>
+            <button
+              onClick={() => reportCondition('available')}
+              disabled={!gpsCoords}
+              className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                currentStatus === 'available'
+                  ? 'bg-jungle/15 border-jungle/30 text-jungle-light'
+                  : 'border-white/10 text-cream-muted hover:border-jungle/30 hover:text-jungle-light'
+              }`}
+            >
+              <CheckCircle className="w-4 h-4 shrink-0" />
+              <span>Normal<br /><span className="text-xs font-normal">Kembali OK</span></span>
+            </button>
           </div>
         </div>
 

@@ -20,30 +20,33 @@ const AdminDriverMap = dynamic(() => import('@/components/ui/admin-driver-map'),
 })
 
 interface LiveDriver {
-  driverName: string
-  vehicle: string
-  lat: number
-  lng: number
-  status: string
+  driverName:  string
+  vehicle:     string
+  lat:         number
+  lng:         number
+  status:      string
   bookingCode: string | null
   customerName: string | null
-  pickupName: string | null
-  pickupLat: number | null
-  pickupLng: number | null
-  updatedAt: number
+  pickupName:  string | null
+  pickupLat:   number | null
+  pickupLng:   number | null
+  updatedAt:   number
+  tripsToday:  number
+  tripsMonth:  number
+  tripsTotal:  number
 }
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; bg: string; border: string }> = {
-  Available:    { label: 'Available',    dot: 'bg-jungle-light', text: 'text-jungle-light', bg: 'bg-jungle/15',  border: 'border-jungle/25' },
-  Standby:      { label: 'Standby',      dot: 'bg-gold',         text: 'text-gold',         bg: 'bg-gold/15',    border: 'border-gold/25' },
-  'Fully Booked':{ label: 'Full',        dot: 'bg-lava',         text: 'text-lava',         bg: 'bg-lava/15',    border: 'border-lava/25' },
-  'On Trip':    { label: 'On Trip',      dot: 'bg-sunset',       text: 'text-sunset',       bg: 'bg-sunset/15',  border: 'border-sunset/25' },
-  Maintenance:  { label: 'Maintenance',  dot: 'bg-cream-muted',  text: 'text-cream-muted',  bg: 'bg-white/8',    border: 'border-white/12' },
-  available:    { label: 'Available',    dot: 'bg-jungle-light', text: 'text-jungle-light', bg: 'bg-jungle/15',  border: 'border-jungle/25' },
-  'en-route':   { label: 'En Route',     dot: 'bg-sunset',       text: 'text-sunset',       bg: 'bg-sunset/15',  border: 'border-sunset/25' },
-  'on-trip':    { label: 'On Trip',      dot: 'bg-lava',         text: 'text-lava',         bg: 'bg-lava/15',    border: 'border-lava/25' },
-  arrived:      { label: 'Di Lokasi',    dot: 'bg-purple-400',   text: 'text-purple-300',   bg: 'bg-purple-900/20', border: 'border-purple-500/30' },
-  offline:      { label: 'Offline',      dot: 'bg-cream-muted',  text: 'text-cream-muted',  bg: 'bg-white/8',    border: 'border-white/12' },
+  available:         { label: 'Tersedia',          dot: 'bg-jungle-light', text: 'text-jungle-light', bg: 'bg-jungle/15',      border: 'border-jungle/25' },
+  standby:           { label: 'Standby',            dot: 'bg-gold',         text: 'text-gold',         bg: 'bg-gold/15',        border: 'border-gold/25' },
+  'en-route':        { label: 'Menuju Pickup',      dot: 'bg-sunset',       text: 'text-sunset',       bg: 'bg-sunset/15',      border: 'border-sunset/25' },
+  'on-trip':         { label: 'Sedang Trip',        dot: 'bg-lava',         text: 'text-lava',         bg: 'bg-lava/15',        border: 'border-lava/25' },
+  arrived:           { label: 'Di Lokasi',          dot: 'bg-purple-400',   text: 'text-purple-300',   bg: 'bg-purple-900/20',  border: 'border-purple-500/30' },
+  confirmed:         { label: 'Terima Orderan',     dot: 'bg-ocean-light',  text: 'text-ocean-light',  bg: 'bg-ocean/15',       border: 'border-ocean/25' },
+  'vehicle-problem': { label: '⚠ Kendaraan Masalah', dot: 'bg-gold',        text: 'text-gold',         bg: 'bg-gold/20',        border: 'border-gold/40' },
+  service:           { label: '🔧 Service',          dot: 'bg-cream-muted',  text: 'text-cream-muted',  bg: 'bg-white/8',        border: 'border-white/15' },
+  accident:          { label: '🚨 Darurat',          dot: 'bg-lava',         text: 'text-lava',         bg: 'bg-lava/25',        border: 'border-lava/50' },
+  offline:           { label: 'Offline',             dot: 'bg-cream-muted',  text: 'text-cream-muted',  bg: 'bg-white/5',        border: 'border-white/8' },
 }
 
 export default function FleetPage() {
@@ -297,18 +300,27 @@ export default function FleetPage() {
                             <span className="truncate">{d.bookingCode}</span>
                           </div>
                         )}
-                        {d.customerName && (
-                          <div className="flex justify-between">
-                            <span>Penumpang</span>
-                            <span className="text-cream">{d.customerName}</span>
-                          </div>
-                        )}
                         {d.pickupName && (
                           <div className="flex justify-between">
                             <span>Pickup</span>
                             <span className="text-cream truncate max-w-[100px]">{d.pickupName}</span>
                           </div>
                         )}
+                        {/* Trip counts */}
+                        <div className="pt-2 mt-2 border-t border-white/6 grid grid-cols-3 gap-1 text-center">
+                          <div>
+                            <p className="text-cream font-bold text-sm">{d.tripsToday ?? 0}</p>
+                            <p className="text-[10px]">Hari ini</p>
+                          </div>
+                          <div>
+                            <p className="text-cream font-bold text-sm">{d.tripsMonth ?? 0}</p>
+                            <p className="text-[10px]">Bulan ini</p>
+                          </div>
+                          <div>
+                            <p className="text-sunset font-bold text-sm">{d.tripsTotal ?? 0}</p>
+                            <p className="text-[10px]">Total</p>
+                          </div>
+                        </div>
                       </div>
 
                       {d.bookingCode && d.bookingCode !== 'STANDBY' && (

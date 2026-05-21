@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { driverStateStore } from '@/lib/driver-state'
 import { tourPackages } from '@/lib/data'
 
 // WIB = UTC+7
@@ -78,21 +77,60 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
     }
 
     case 'driver-aktif': {
-      const drivers = Array.from(driverStateStore.values()).filter(
-        d => Date.now() - d.updatedAt < 30 * 60 * 1000
-      )
+      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+      const { data: locs } = await supabase
+        .from('driver_locations')
+        .select('*')
+        .gte('recorded_at', since)
+        .order('recorded_at', { ascending: false })
 
-      const headers = ['Nama Driver', 'Kendaraan', 'Status', 'Booking Code', 'Lokasi Pickup', 'Lat', 'Lng', 'Update Terakhir']
-      const rows = drivers.map(d => [
-        d.driverName,
-        d.vehicle,
-        d.status,
-        d.bookingCode || '-',
-        d.pickupName || '-',
-        d.lat?.toFixed(5) || '',
-        d.lng?.toFixed(5) || '',
-        d.updatedAt ? toWIBTime(new Date(d.updatedAt).toISOString()) : '',
-      ])
+      // Latest per driver
+      const seenD = new Set<string>()
+      const latestD = (locs || []).filter(row => {
+        if (seenD.has(row.driver_name)) return false
+        seenD.add(row.driver_name); return true
+      })
+
+      // Trip counts
+      const WIBOffset = 7 * 60 * 60 * 1000
+      const todayWIB = new Date(Date.now() + WIBOffset)
+      todayWIB.setUTCHours(0, 0, 0, 0)
+      const todayISO = new Date(todayWIB.getTime() - WIBOffset).toISOString()
+      const monthWIB = new Date(Date.now() + WIBOffset)
+      monthWIB.setUTCDate(1); monthWIB.setUTCHours(0, 0, 0, 0)
+      const monthISO = new Date(monthWIB.getTime() - WIBOffset).toISOString()
+
+      const { data: tripRows } = await supabase
+        .from('driver_locations')
+        .select('driver_name, booking_code, recorded_at')
+        .neq('booking_code', 'STANDBY')
+        .not('booking_code', 'is', null)
+
+      const tripMap: Record<string, { today: Set<string>; month: Set<string>; total: Set<string> }> = {}
+      for (const row of (tripRows || [])) {
+        const n = row.driver_name; if (!n) continue
+        if (!tripMap[n]) tripMap[n] = { today: new Set(), month: new Set(), total: new Set() }
+        tripMap[n].total.add(row.booking_code)
+        if (row.recorded_at >= monthISO) tripMap[n].month.add(row.booking_code)
+        if (row.recorded_at >= todayISO) tripMap[n].today.add(row.booking_code)
+      }
+
+      const headers = ['Nama Driver', 'Kendaraan', 'Status', 'Booking Code', 'Lat', 'Lng', 'Update Terakhir', 'Trip Hari Ini', 'Trip Bulan Ini', 'Total Trip']
+      const rows = latestD.map(d => {
+        const tc = tripMap[d.driver_name] || { today: new Set(), month: new Set(), total: new Set() }
+        return [
+          d.driver_name,
+          d.vehicle || '-',
+          d.status,
+          d.booking_code !== 'STANDBY' ? (d.booking_code || '-') : '-',
+          d.lat?.toFixed(5) || '',
+          d.lng?.toFixed(5) || '',
+          d.recorded_at ? toWIBTime(d.recorded_at) : '',
+          tc.today.size,
+          tc.month.size,
+          tc.total.size,
+        ]
+      })
 
       return new NextResponse(toCsv(headers, rows), {
         headers: { 'Content-Type': 'text/csv; charset=utf-8' },
@@ -113,7 +151,9 @@ export async function GET(req: NextRequest, { params }: { params: { sheet: strin
       const todayBook = bookings?.filter(b => b.created_at >= todayISO).length || 0
       const todayRev  = bookings?.filter(b => b.created_at >= todayISO && b.status !== 'cancelled').reduce((s, b) => s + (b.total_usd || 0), 0) || 0
       const totalGuests = bookings?.reduce((s, b) => s + (b.guests || 0), 0) || 0
-      const driverOnline = driverStateStore.size
+      const sinceD = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+      const { data: driverLocs } = await supabase.from('driver_locations').select('driver_name').gte('recorded_at', sinceD)
+      const driverOnline = new Set((driverLocs || []).map(d => d.driver_name)).size
 
       const headers = ['Metrik', 'Nilai']
       const rows = [
