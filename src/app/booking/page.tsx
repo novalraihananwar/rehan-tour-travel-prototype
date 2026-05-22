@@ -57,6 +57,11 @@ function BookingPageInner() {
   })
   const [submitted, setSubmitted] = useState(false)
   const [bookingCode] = useState(generateBookingCode())
+  const [voucherInput, setVoucherInput] = useState('')
+  const [voucherCode, setVoucherCode] = useState('')
+  const [voucherDiscount, setVoucherDiscount] = useState(0)
+  const [voucherMsg, setVoucherMsg] = useState('')
+  const [voucherLoading, setVoucherLoading] = useState(false)
 
   const selectedPkg    = tourPackages.find((p) => p.slug === formData.packageId)
   const suggestedPkg   = suggestSlug ? tourPackages.find((p) => p.slug === suggestSlug) : null
@@ -101,6 +106,28 @@ function BookingPageInner() {
   const handleNext = () => step < TOTAL_STEPS && setStep(step + 1)
   const handleBack = () => step > 1 && setStep(step - 1)
 
+  const handleApplyVoucher = async () => {
+    if (!voucherInput.trim()) return
+    setVoucherLoading(true); setVoucherMsg('')
+    try {
+      const res = await fetch('/api/bookings/voucher', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: voucherInput.trim(), total_usd: totalPriceUSD + pickupFeeUSD }),
+      })
+      const data = await res.json()
+      if (data.valid) {
+        setVoucherCode(data.code)
+        setVoucherDiscount(data.discount_usd)
+        setVoucherMsg(`✓ ${data.description} — saving ${formatPrice(data.discount_usd)}`)
+      } else {
+        setVoucherCode(''); setVoucherDiscount(0)
+        setVoucherMsg(data.error || 'Kode tidak valid')
+      }
+    } finally { setVoucherLoading(false) }
+  }
+
+  const finalTotalUSD = Math.max(0, totalPriceUSD + pickupFeeUSD - voucherDiscount)
+
   const handleSubmit = async () => {
     // Save booking to Supabase
     try {
@@ -123,9 +150,18 @@ function BookingPageInner() {
           whatsapp:      formData.whatsapp,
           specialRequest: formData.specialRequest,
           paymentMethod: formData.paymentMethod,
-          totalUsd:      totalPriceUSD + pickupFeeUSD,
+          voucher_code:  voucherCode || null,
+          discount_usd:  voucherDiscount || 0,
+          totalUsd:      finalTotalUSD,
         }),
       })
+      // Increment voucher usage if applied
+      if (voucherCode) {
+        fetch('/api/bookings/voucher/use', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: voucherCode }),
+        }).catch(() => {})
+      }
     } catch {
       // Continue even if DB save fails — show confirmation screen
     }
@@ -558,12 +594,44 @@ function BookingPageInner() {
                       </span>
                     </div>
                   )}
+                  {voucherDiscount > 0 && (
+                    <div className="flex justify-between text-jungle-light text-sm">
+                      <span>Voucher ({voucherCode})</span>
+                      <span>-{formatPrice(voucherDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-medium pt-3 border-t border-white/8 text-base">
                     <span className="text-cream">{t.booking.total}</span>
-                    {totalPriceUSD + pickupFeeUSD > 0 ? (
-                      <span className="text-sunset text-xl font-bold font-display">{formatPrice(totalPriceUSD + pickupFeeUSD)}</span>
+                    {finalTotalUSD > 0 ? (
+                      <span className="text-sunset text-xl font-bold font-display">{formatPrice(finalTotalUSD)}</span>
                     ) : (
                       <span className="text-gold text-sm font-medium">To be confirmed via WhatsApp</span>
+                    )}
+                  </div>
+
+                  {/* Voucher input */}
+                  <div className="pt-3 border-t border-white/8">
+                    <p className="text-xs text-cream-muted mb-2">Promo Code</p>
+                    <div className="flex gap-2">
+                      <input
+                        value={voucherInput}
+                        onChange={e => { setVoucherInput(e.target.value); setVoucherMsg('') }}
+                        onKeyDown={e => e.key === 'Enter' && handleApplyVoucher()}
+                        placeholder="Enter promo code"
+                        className="input-dark flex-1 text-sm"
+                      />
+                      <button
+                        onClick={handleApplyVoucher}
+                        disabled={voucherLoading || !voucherInput.trim()}
+                        className="px-4 py-2 rounded-xl border border-sunset/40 text-sunset text-sm hover:bg-sunset/10 transition-colors disabled:opacity-50 shrink-0"
+                      >
+                        {voucherLoading ? '...' : 'Apply'}
+                      </button>
+                    </div>
+                    {voucherMsg && (
+                      <p className={`text-xs mt-1.5 ${voucherMsg.startsWith('✓') ? 'text-jungle-light' : 'text-red-400'}`}>
+                        {voucherMsg}
+                      </p>
                     )}
                   </div>
                 </div>

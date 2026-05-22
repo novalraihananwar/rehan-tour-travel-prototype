@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckCircle, Clock, MapPin, Navigation, Phone,
-  Star, Share2, Calendar, Users, Copy, Check,
+  Star, Share2, Calendar, Users, Copy, Check, XCircle, MessageSquare,
 } from 'lucide-react'
 import { getPusherClient } from '@/lib/pusher-client'
 import { supabase } from '@/lib/supabase'
@@ -54,6 +54,12 @@ export function BookingTrackerClient({ code }: { code: string }) {
   const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null)
   const [driverPhoto, setDriverPhoto] = useState<string | null>(null)
   const channelRef = useRef<{ unbind_all: () => void } | null>(null)
+
+  // Cancel booking state
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState('')
 
   // Load booking details + driver photo
   useEffect(() => {
@@ -125,6 +131,27 @@ export function BookingTrackerClient({ code }: { code: string }) {
   const waLink = `https://wa.me/6281234567890?text=${encodeURIComponent(
     `Halo Rehan Tour! Saya ingin cek booking saya: *${code}*`
   )}`
+
+  const handleCancel = async () => {
+    setCancelling(true)
+    setCancelError('')
+    try {
+      const res = await fetch('/api/bookings/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, reason: cancelReason }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setCancelError(data.error || 'Gagal membatalkan booking'); return }
+      setBookingInfo(prev => prev ? { ...prev, status: 'cancelled' } : prev)
+      setShowCancelModal(false)
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  const canCancel = bookingInfo?.status && ['confirmed', 'pending'].includes(bookingInfo.status)
+  const isCompleted = bookingInfo?.status === 'done' || bookingInfo?.status === 'completed'
 
   return (
     <div className="min-h-screen bg-volcanic pt-20">
@@ -319,12 +346,93 @@ export function BookingTrackerClient({ code }: { code: string }) {
               WhatsApp Admin
             </a>
 
+            {/* Leave a review — shown when trip is done */}
+            {isCompleted && (
+              <a
+                href={`/review/${code}`}
+                className="flex items-center justify-center gap-2 w-full py-3 text-sm rounded-2xl border border-gold/30 text-gold hover:bg-gold/10 transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Leave a Review
+              </a>
+            )}
+
+            {/* Cancel booking */}
+            {canCancel && (
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="flex items-center justify-center gap-2 w-full py-3 text-sm rounded-2xl border border-red-500/20 text-red-400/70 hover:text-red-400 hover:border-red-500/40 transition-colors"
+              >
+                <XCircle className="w-4 h-4" />
+                Cancel Booking
+              </button>
+            )}
+
             <Link href="/packages" className="btn-ghost w-full justify-center py-3 text-sm">
               Book another trip
             </Link>
           </div>
         </div>
       </div>
+
+      {/* Cancel Modal */}
+      <AnimatePresence>
+        {showCancelModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={e => { if (e.target === e.currentTarget) setShowCancelModal(false) }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-volcanic-200 border border-white/10 rounded-2xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-cream text-sm">Cancel Booking?</h3>
+                  <p className="text-xs text-cream-muted">Code: {code}</p>
+                </div>
+              </div>
+              <p className="text-sm text-cream-muted mb-5 leading-relaxed">
+                Are you sure you want to cancel this booking? This action cannot be undone. Please review our cancellation policy before proceeding.
+              </p>
+              <div className="mb-4">
+                <label className="text-xs text-cream-muted uppercase tracking-wider block mb-1.5">Reason (optional)</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  placeholder="Tell us why you're cancelling..."
+                  rows={3}
+                  className="input-dark w-full text-sm resize-none"
+                />
+              </div>
+              {cancelError && <p className="text-sm text-red-400 mb-4">{cancelError}</p>}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500/80 hover:bg-red-500 text-white text-sm font-medium transition-colors disabled:opacity-60"
+                >
+                  {cancelling ? 'Cancelling...' : 'Yes, Cancel Booking'}
+                </button>
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-cream-muted hover:text-cream text-sm transition-colors"
+                >
+                  Keep Booking
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

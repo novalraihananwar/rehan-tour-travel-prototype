@@ -36,6 +36,9 @@ export function Navbar() {
       ],
     },
     { label: t.nav.blog, href: '/blog' },
+    { label: t.nav.gallery ?? 'Gallery', href: '/gallery' },
+    { label: t.nav.about ?? 'About', href: '/about' },
+    { label: t.nav.contact ?? 'Contact', href: '/contact' },
   ]
 
   useEffect(() => {

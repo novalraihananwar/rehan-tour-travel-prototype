@@ -7,15 +7,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Truck, BookOpen, Package, BarChart2,
   Star, LogOut, Menu, X, ChevronRight, Bell, Search,
+  MapPin, FileText, Settings,
 } from 'lucide-react'
 
 const NAV_BASE = [
-  { href: '/admin',           label: 'Overview',        icon: LayoutDashboard, exact: true },
-  { href: '/admin/bookings',  label: 'Bookings',        icon: BookOpen },
-  { href: '/admin/fleet',     label: 'Fleet & Drivers', icon: Truck },
-  { href: '/admin/packages',  label: 'Packages',        icon: Package },
-  { href: '/admin/analytics', label: 'Analytics',       icon: BarChart2 },
-  { href: '/admin/reviews',   label: 'Reviews',         icon: Star },
+  { href: '/admin',                label: 'Overview',        icon: LayoutDashboard, exact: true },
+  { href: '/admin/bookings',       label: 'Bookings',        icon: BookOpen },
+  { href: '/admin/fleet',          label: 'Fleet & Drivers', icon: Truck },
+  { href: '/admin/packages',       label: 'Packages',        icon: Package },
+  { href: '/admin/destinations',   label: 'Destinations',    icon: MapPin },
+  { href: '/admin/blog',           label: 'Blog',            icon: FileText },
+  { href: '/admin/analytics',      label: 'Analytics',       icon: BarChart2 },
+  { href: '/admin/reviews',        label: 'Reviews',         icon: Star },
+  { href: '/admin/settings',       label: 'Settings',        icon: Settings },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

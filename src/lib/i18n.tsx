@@ -36,6 +36,9 @@ export const translations = {
       eastJava: 'East Java',
       bali: 'Bali',
       allPackages: 'All Packages',
+      about: 'About',
+      gallery: 'Gallery',
+      contact: 'Contact',
     },
     hero: {
       eyebrow: 'Premium Cinematic Travel',
@@ -132,6 +135,9 @@ export const translations = {
       eastJava: 'Jawa Timur',
       bali: 'Bali',
       allPackages: 'Semua Paket',
+      about: 'Tentang Kami',
+      gallery: 'Galeri',
+      contact: 'Kontak',
     },
     hero: {
       eyebrow: 'Perjalanan Sinematik Premium',
@@ -228,6 +234,9 @@ export const translations = {
       eastJava: '東ジャワ',
       bali: 'バリ',
       allPackages: 'すべてのパッケージ',
+      about: '会社概要',
+      gallery: 'ギャラリー',
+      contact: 'お問い合わせ',
     },
     hero: {
       eyebrow: 'プレミアム・シネマティック旅行',
@@ -324,6 +333,9 @@ export const translations = {
       eastJava: '동부 자바',
       bali: '발리',
       allPackages: '모든 패키지',
+      about: '회사 소개',
+      gallery: '갤러리',
+      contact: '문의하기',
     },
     hero: {
       eyebrow: '프리미엄 시네마틱 여행',
@@ -420,6 +432,9 @@ export const translations = {
       eastJava: '东爪哇',
       bali: '巴厘岛',
       allPackages: '全部套餐',
+      about: '关于我们',
+      gallery: '图库',
+      contact: '联系我们',
     },
     hero: {
       eyebrow: '高端电影式旅行',
@@ -516,6 +531,9 @@ export const translations = {
       eastJava: 'Ostjava',
       bali: 'Bali',
       allPackages: 'Alle Pakete',
+      about: 'Über Uns',
+      gallery: 'Galerie',
+      contact: 'Kontakt',
     },
     hero: {
       eyebrow: 'Premium-Kinoerlebnis-Reisen',
@@ -604,7 +622,7 @@ export const translations = {
   },
 
   fr: {
-    nav: { destinations: 'Destinations', packages: 'Forfaits', blog: 'Blog', bookNow: 'Réserver', eastJava: 'Java-Est', bali: 'Bali', allPackages: 'Tous les forfaits' },
+    nav: { destinations: 'Destinations', packages: 'Forfaits', blog: 'Blog', bookNow: 'Réserver', eastJava: 'Java-Est', bali: 'Bali', allPackages: 'Tous les forfaits', about: 'À Propos', gallery: 'Galerie', contact: 'Contact' },
     hero: { eyebrow: 'Voyages Cinématiques Premium', subtitle: "Voyages terrestres de Surabaya à Bali. Lever du soleil sur Bromo, feux bleus d'Ijen, chutes Tumpak Sewu.", explorePackages: 'Voir les forfaits', viewDestinations: 'Voir les destinations' },
     sections: { destinations: 'Destinations', packages: 'Forfaits', testimonials: 'Avis Vérifiés', fleet: 'Notre Flotte', blog: 'Journal de Voyage', departures: 'Prochains Départs' },
     booking: { title: 'Réservez Votre Aventure', subtitle: 'Sans compte · Confirmation WhatsApp immédiate', step1: 'Choisir', step2: 'Prise en charge', step3: 'Vos Données', step4: 'Paiement', selectPackage: 'Forfait', departureDate: 'Date de départ', travelers: 'Nombre de voyageurs', totalEstimate: 'Estimation totale', pickupPoint: 'Point de prise en charge', fullName: 'Nom complet', email: 'Adresse e-mail', whatsapp: 'Numéro WhatsApp', specialRequest: 'Demandes spéciales', specialRequestPlaceholder: 'Régime alimentaire, accessibilité, occasions spéciales...', namePlaceholder: 'Votre nom complet', emailPlaceholder: 'your@email.com', whatsappPlaceholder: '+33 6 12 34 56 78', whatsappNote: 'Votre confirmation et PDF itinéraire seront envoyés ici.', paymentMethod: 'Méthode de paiement', orderSummary: 'Récapitulatif', perPerson: '/ pers.', travelers_label: 'voyageur(s)', departure: 'Départ', total: 'Total', confirmPay: 'Confirmer & Payer', continue: 'Continuer', back: 'Retour', freeCancel: 'Sans compte · Annulation gratuite 72h avant', seatsLeft: 'places restantes', confirmed: 'Réservation Confirmée!', confirmedSub: 'Votre aventure est sécurisée. Vérifiez WhatsApp.', bookingCode: 'Code de réservation', whatsappConfirm: 'Confirmation et PDF envoyés à :', backHome: 'Accueil', morePackages: 'Plus de forfaits' },
@@ -614,7 +632,7 @@ export const translations = {
   },
 
   es: {
-    nav: { destinations: 'Destinos', packages: 'Paquetes', blog: 'Blog', bookNow: 'Reservar', eastJava: 'Java Oriental', bali: 'Bali', allPackages: 'Todos los paquetes' },
+    nav: { destinations: 'Destinos', packages: 'Paquetes', blog: 'Blog', bookNow: 'Reservar', eastJava: 'Java Oriental', bali: 'Bali', allPackages: 'Todos los paquetes', about: 'Nosotros', gallery: 'Galería', contact: 'Contacto' },
     hero: { eyebrow: 'Viajes Cinematográficos Premium', subtitle: 'Viajes por tierra de Surabaya a Bali. Amanecer en Bromo, fuego azul Ijen, cascada Tumpak Sewu.', explorePackages: 'Ver paquetes', viewDestinations: 'Ver destinos' },
     sections: { destinations: 'Destinos', packages: 'Paquetes', testimonials: 'Opiniones Verificadas', fleet: 'Nuestra Flota', blog: 'Diario de Viaje', departures: 'Próximas Salidas' },
     booking: { title: 'Reserva Tu Aventura', subtitle: 'Sin cuenta · Confirmación instantánea por WhatsApp', step1: 'Elegir', step2: 'Recogida', step3: 'Tus Datos', step4: 'Pago', selectPackage: 'Paquete', departureDate: 'Fecha de salida', travelers: 'Viajeros', totalEstimate: 'Total estimado', pickupPoint: 'Punto de recogida', fullName: 'Nombre completo', email: 'Correo electrónico', whatsapp: 'Número WhatsApp', specialRequest: 'Solicitudes especiales', specialRequestPlaceholder: 'Dieta, accesibilidad, ocasiones especiales...', namePlaceholder: 'Tu nombre completo', emailPlaceholder: 'tu@email.com', whatsappPlaceholder: '+34 612 345 678', whatsappNote: 'Tu confirmación y PDF del itinerario se enviarán aquí.', paymentMethod: 'Método de pago', orderSummary: 'Resumen del pedido', perPerson: '/ persona', travelers_label: 'viajero(s)', departure: 'Salida', total: 'Total', confirmPay: 'Confirmar y Pagar', continue: 'Continuar', back: 'Atrás', freeCancel: 'Sin cuenta · Cancelación gratuita 72h antes', seatsLeft: 'plazas restantes', confirmed: '¡Reserva Confirmada!', confirmedSub: 'Tu aventura está asegurada. Revisa WhatsApp.', bookingCode: 'Código de reserva', whatsappConfirm: 'Confirmación y PDF enviados a:', backHome: 'Inicio', morePackages: 'Más paquetes' },
@@ -624,7 +642,7 @@ export const translations = {
   },
 
   ru: {
-    nav: { destinations: 'Направления', packages: 'Туры', blog: 'Блог', bookNow: 'Забронировать', eastJava: 'Восточная Ява', bali: 'Бали', allPackages: 'Все туры' },
+    nav: { destinations: 'Направления', packages: 'Туры', blog: 'Блог', bookNow: 'Забронировать', eastJava: 'Восточная Ява', bali: 'Бали', allPackages: 'Все туры', about: 'О Нас', gallery: 'Галерея', contact: 'Контакты' },
     hero: { eyebrow: 'Премиум-путешествия', subtitle: 'Наземные маршруты от Сурабаи до Бали. Рассвет над Бромо, синий огонь Иджен, водопад Тумпак-Sewu.', explorePackages: 'Смотреть туры', viewDestinations: 'Смотреть направления' },
     sections: { destinations: 'Направления', packages: 'Туры', testimonials: 'Отзывы', fleet: 'Наш автопарк', blog: 'Путевые заметки', departures: 'Ближайшие отправления' },
     booking: { title: 'Забронируйте приключение', subtitle: 'Без регистрации · Мгновенное подтверждение в WhatsApp', step1: 'Выбор тура', step2: 'Точка встречи', step3: 'Ваши данные', step4: 'Оплата', selectPackage: 'Тур', departureDate: 'Дата отправления', travelers: 'Количество туристов', totalEstimate: 'Итого (примерно)', pickupPoint: 'Выберите место встречи', fullName: 'Полное имя', email: 'Электронная почта', whatsapp: 'Номер WhatsApp', specialRequest: 'Особые пожелания', specialRequestPlaceholder: 'Диетические требования, доступность, особые поводы...', namePlaceholder: 'Ваше полное имя', emailPlaceholder: 'your@email.com', whatsappPlaceholder: '+7 912 345-67-89', whatsappNote: 'Подтверждение бронирования и PDF маршрута будут отправлены сюда.', paymentMethod: 'Способ оплаты', orderSummary: 'Итоги заказа', perPerson: '/ чел.', travelers_label: 'чел.', departure: 'Отправление', total: 'Итого', confirmPay: 'Подтвердить и оплатить', continue: 'Далее', back: 'Назад', freeCancel: 'Без аккаунта · Бесплатная отмена за 72 ч', seatsLeft: 'мест осталось', confirmed: 'Бронирование подтверждено!', confirmedSub: 'Ваше приключение обеспечено. Проверьте WhatsApp.', bookingCode: 'Код бронирования', whatsappConfirm: 'Подтверждение и PDF маршрута будут отправлены на:', backHome: 'Главная', morePackages: 'Ещё туры' },
@@ -634,7 +652,7 @@ export const translations = {
   },
 
   th: {
-    nav: { destinations: 'จุดหมาย', packages: 'แพ็กเกจทัวร์', blog: 'บล็อก', bookNow: 'จองเลย', eastJava: 'ชวาตะวันออก', bali: 'บาหลี', allPackages: 'ทุกแพ็กเกจ' },
+    nav: { destinations: 'จุดหมาย', packages: 'แพ็กเกจทัวร์', blog: 'บล็อก', bookNow: 'จองเลย', eastJava: 'ชวาตะวันออก', bali: 'บาหลี', allPackages: 'ทุกแพ็กเกจ', about: 'เกี่ยวกับเรา', gallery: 'แกลเลอรี', contact: 'ติดต่อ' },
     hero: { eyebrow: 'การท่องเที่ยวระดับพรีเมียม', subtitle: 'เดินทางทางบกจากสุราบายาสู่บาหลี พระอาทิตย์ขึ้นที่โบรโม ไฟสีน้ำเงินอีเจน น้ำตกทัมปัคเสวู', explorePackages: 'ดูแพ็กเกจ', viewDestinations: 'ดูจุดหมาย' },
     sections: { destinations: 'จุดหมาย', packages: 'แพ็กเกจทัวร์', testimonials: 'รีวิวที่ยืนยัน', fleet: 'รถของเรา', blog: 'บันทึกการเดินทาง', departures: 'กำหนดการออกเดินทาง' },
     booking: { title: 'จองการผจญภัยของคุณ', subtitle: 'ไม่ต้องมีบัญชี · ยืนยันทันทีทาง WhatsApp', step1: 'เลือกทัวร์', step2: 'จุดรับ', step3: 'ข้อมูลของคุณ', step4: 'ชำระเงิน', selectPackage: 'แพ็กเกจทัวร์', departureDate: 'วันออกเดินทาง', travelers: 'จำนวนนักท่องเที่ยว', totalEstimate: 'ราคาประเมิน', pickupPoint: 'เลือกจุดรับ', fullName: 'ชื่อเต็ม', email: 'อีเมล', whatsapp: 'เบอร์ WhatsApp', specialRequest: 'ความต้องการพิเศษ', specialRequestPlaceholder: 'ข้อจำกัดด้านอาหาร การเข้าถึง โอกาสพิเศษ...', namePlaceholder: 'ชื่อเต็มของคุณ', emailPlaceholder: 'your@email.com', whatsappPlaceholder: '+66 81 234 5678', whatsappNote: 'การยืนยันการจองและ PDF จะส่งไปที่นี่', paymentMethod: 'วิธีการชำระเงิน', orderSummary: 'สรุปคำสั่งซื้อ', perPerson: '/ คน', travelers_label: 'คน', departure: 'วันออกเดินทาง', total: 'รวม', confirmPay: 'ยืนยันและชำระเงิน', continue: 'ถัดไป', back: 'ย้อนกลับ', freeCancel: 'ไม่ต้องมีบัญชี · ยกเลิกฟรีก่อน 72 ชั่วโมง', seatsLeft: 'ที่นั่งเหลือ', confirmed: 'ยืนยันการจองแล้ว!', confirmedSub: 'การผจญภัยของคุณได้รับการรับรองแล้ว ตรวจสอบ WhatsApp', bookingCode: 'รหัสการจอง', whatsappConfirm: 'การยืนยันและ PDF จะส่งไปที่:', backHome: 'หน้าหลัก', morePackages: 'แพ็กเกจอื่น' },
